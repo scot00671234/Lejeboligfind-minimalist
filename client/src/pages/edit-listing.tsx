@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Upload, X } from "lucide-react";
-import { insertPropertySchema, type InsertProperty, type Property } from "@shared/schema";
+import { insertPropertySchema, type InsertProperty, type PropertyWithUser } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 
@@ -25,7 +25,7 @@ export default function EditListing() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const { data: property, isLoading: propertyLoading } = useQuery<Property>({
+  const { data: property, isLoading: propertyLoading } = useQuery<PropertyWithUser>({
     queryKey: ["/api/properties", id],
     queryFn: async () => {
       const response = await fetch(`/api/properties/${id}`);

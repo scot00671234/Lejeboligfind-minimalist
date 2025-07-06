@@ -48,9 +48,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
-        {property.imageUrl ? (
+        {(property.imageUrl || (property.imageUrls && property.imageUrls.length > 0)) ? (
           <img 
-            src={property.imageUrl} 
+            src={property.imageUrl || property.imageUrls?.[0]} 
             alt={property.title}
             className="w-full h-full object-cover"
           />

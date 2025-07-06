@@ -287,7 +287,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/messages/:id/read", requireAuth, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
-      await storage.markMessageAsRead(messageId, req.session.userId);
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      await storage.markMessageAsRead(messageId, userId);
       res.json({ message: "Message marked as read" });
     } catch (error) {
       console.error("Mark message as read error:", error);

@@ -74,12 +74,39 @@ export default function CreateListing() {
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setSelectedFiles(e.target.files);
-      // Convert files to URLs for preview
-      const urls = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setImageUrls(urls);
+      
+      // Upload files to server and get URLs
+      const uploadedUrls: string[] = [];
+      
+      for (const file of Array.from(e.target.files)) {
+        try {
+          // Convert file to base64
+          const reader = new FileReader();
+          const base64Promise = new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+          });
+          reader.readAsDataURL(file);
+          const base64 = await base64Promise;
+          
+          // Upload to server
+          const response = await apiRequest("POST", "/api/upload", { image: base64 });
+          const result = await response.json();
+          uploadedUrls.push(result.imageUrl);
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          toast({
+            title: "Fejl ved upload",
+            description: "Kunne ikke uploade billede",
+            variant: "destructive",
+          });
+        }
+      }
+      
+      setImageUrls(uploadedUrls);
     }
   };
 
@@ -90,6 +117,7 @@ export default function CreateListing() {
   const onSubmit = (data: InsertProperty) => {
     const propertyData: InsertProperty = {
       ...data,
+      imageUrl: imageUrls.length > 0 ? imageUrls[0] : undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
     };
     createProperty.mutate(propertyData);

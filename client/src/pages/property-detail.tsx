@@ -110,9 +110,9 @@ export default function PropertyDetail() {
           {/* Image Section */}
           <div className="space-y-4">
             <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-              {property.imageUrl ? (
+              {(property.imageUrl || (property.imageUrls && property.imageUrls.length > 0)) ? (
                 <img 
-                  src={property.imageUrl} 
+                  src={property.imageUrl || property.imageUrls?.[0]} 
                   alt={property.title}
                   className="w-full h-full object-cover"
                 />

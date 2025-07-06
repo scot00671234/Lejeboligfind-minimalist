@@ -114,6 +114,16 @@ Lejebolig Find is a Danish rental property platform that connects property owner
 
 ## Changelog
 - July 06, 2025. Initial setup
+- July 06, 2025. Fixed image upload system:
+  - Replaced blob URLs with proper server-side image uploads
+  - Images now uploaded to /api/upload endpoint during property creation
+  - Fixed image display in property cards and detail views
+- July 06, 2025. Fixed property editing access control:
+  - Corrected type definitions for PropertyWithUser
+  - Fixed ownership verification for property editing
+- July 06, 2025. Database cleanup:
+  - Removed test/mock data from database
+  - Cleaned up properties with invalid blob URLs
 
 ## User Preferences
 
