@@ -51,6 +51,14 @@ export function Navigation() {
                       Mine boliger
                     </Button>
                   </Link>
+                  <Link href="/beskeder">
+                    <Button 
+                      variant={location === "/beskeder" ? "default" : "ghost"}
+                      size="sm"
+                    >
+                      Beskeder
+                    </Button>
+                  </Link>
                   <Button 
                     variant="ghost" 
                     size="sm" 

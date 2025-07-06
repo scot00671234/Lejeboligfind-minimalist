@@ -13,13 +13,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { insertPropertySchema } from "@shared/schema";
 import type { InsertProperty } from "@shared/schema";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { X, Plus } from "lucide-react";
 
 export default function CreateListing() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   const form = useForm<InsertProperty>({
     resolver: zodResolver(insertPropertySchema),
@@ -70,8 +74,23 @@ export default function CreateListing() {
     },
   });
 
+  const addImageUrl = () => {
+    if (newImageUrl.trim() && !imageUrls.includes(newImageUrl.trim())) {
+      setImageUrls([...imageUrls, newImageUrl.trim()]);
+      setNewImageUrl("");
+    }
+  };
+
+  const removeImageUrl = (url: string) => {
+    setImageUrls(imageUrls.filter(u => u !== url));
+  };
+
   const onSubmit = (data: InsertProperty) => {
-    createProperty.mutate(data);
+    const propertyData: InsertProperty = {
+      ...data,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+    };
+    createProperty.mutate(propertyData);
   };
 
   if (isLoading) {
@@ -240,12 +259,56 @@ export default function CreateListing() {
                         <Input 
                           placeholder="https://example.com/image.jpg" 
                           {...field} 
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Multiple image URLs */}
+                <div className="space-y-3">
+                  <FormLabel>Flere billeder (valgfrit)</FormLabel>
+                  <div className="flex space-x-2">
+                    <Input
+                      placeholder="Tilføj billede URL"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addImageUrl();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addImageUrl}
+                      disabled={!newImageUrl.trim()}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {imageUrls.length > 0 && (
+                    <div className="space-y-2">
+                      {imageUrls.map((url, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <span className="text-sm truncate flex-1">{url}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeImageUrl(url)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex justify-end space-x-3">
                   <Button 

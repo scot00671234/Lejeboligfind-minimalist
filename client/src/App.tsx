@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import PropertyDetail from "@/pages/property-detail";
 import CreateListing from "@/pages/create-listing";
 import MyListings from "@/pages/my-listings";
+import Chat from "@/pages/chat";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
         <Route path="/bolig/:id" component={PropertyDetail} />
         <Route path="/opret-bolig" component={CreateListing} />
         <Route path="/mine-boliger" component={MyListings} />
+        <Route path="/beskeder" component={Chat} />
         <Route component={NotFound} />
       </Switch>
     </div>

@@ -243,6 +243,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const messages = await storage.getAllUserMessages(req.session.userId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Get all messages error:", error);
+      res.status(500).json({ message: "Failed to get messages" });
+    }
+  });
+
   app.put("/api/messages/:id/read", requireAuth, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);

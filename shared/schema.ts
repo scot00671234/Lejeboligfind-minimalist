@@ -35,6 +35,7 @@ export const properties = pgTable("properties", {
   rooms: integer("rooms").notNull(),
   type: varchar("type", { length: 50 }).notNull(), // apartment, house, room
   imageUrl: varchar("image_url", { length: 500 }),
+  imageUrls: text("image_urls").array(),
   available: boolean("available").default(true),
   userId: integer("user_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
