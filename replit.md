@@ -1,0 +1,120 @@
+# Lejebolig Find - Danish Rental Property Platform
+
+## Overview
+
+Lejebolig Find is a Danish rental property platform that connects property owners with potential tenants. The application allows users to search for rental properties, view detailed property information, create listings, and communicate with property owners through an integrated messaging system.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter for client-side routing
+- **State Management**: React Query (TanStack Query) for server state management
+- **Styling**: Tailwind CSS with shadcn/ui component library
+- **Build Tool**: Vite for development and production builds
+- **Form Management**: React Hook Form with Zod validation
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js
+- **Database**: PostgreSQL with Drizzle ORM
+- **Database Provider**: Neon Serverless PostgreSQL
+- **Session Management**: Express sessions stored in PostgreSQL
+- **Authentication**: Session-based authentication with bcrypt for password hashing
+- **Development**: Hot reload with Vite middleware integration
+
+### Project Structure
+```
+├── client/                 # Frontend React application
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── lib/            # Utility functions
+├── server/                 # Backend Express application
+│   ├── routes.ts          # API route definitions
+│   ├── storage.ts         # Database operations
+│   └── db.ts              # Database connection
+├── shared/                 # Shared code between frontend and backend
+│   └── schema.ts          # Database schema and validation
+└── migrations/            # Database migrations
+```
+
+## Key Components
+
+### Authentication System
+- Session-based authentication using Express sessions
+- Password hashing with bcrypt
+- Persistent sessions stored in PostgreSQL
+- Protected routes requiring authentication
+
+### Property Management
+- Property listing creation and management
+- Advanced search functionality with filters
+- Property details with image support
+- Property availability tracking
+
+### Messaging System
+- Real-time messaging between property owners and potential tenants
+- Message read/unread status tracking
+- Property-specific conversations
+
+### Database Schema
+- **Users**: User accounts with email authentication
+- **Properties**: Property listings with detailed information
+- **Messages**: Communication between users
+- **Sessions**: Session storage for authentication
+
+## Data Flow
+
+1. **User Registration/Login**: Users create accounts or authenticate through the session-based auth system
+2. **Property Browsing**: Users search and filter properties using the search interface
+3. **Property Details**: Detailed property information is fetched and displayed
+4. **Messaging**: Users can send messages to property owners through the integrated messaging system
+5. **Property Management**: Authenticated users can create and manage their property listings
+
+## External Dependencies
+
+### Frontend Dependencies
+- React ecosystem (React, React DOM, React Router via Wouter)
+- UI Framework (shadcn/ui with Radix UI primitives)
+- Form handling (React Hook Form, Hookform Resolvers)
+- State management (TanStack React Query)
+- Styling (Tailwind CSS, class-variance-authority)
+- Validation (Zod)
+
+### Backend Dependencies
+- Express.js web framework
+- Database (Drizzle ORM, Neon Serverless PostgreSQL)
+- Authentication (bcrypt, express-session, connect-pg-simple)
+- Development tools (tsx, esbuild)
+
+### Build Tools
+- Vite for frontend bundling and development
+- ESBuild for backend bundling
+- TypeScript for type safety
+- PostCSS for CSS processing
+
+## Deployment Strategy
+
+### Development
+- Frontend: Vite dev server with hot reload
+- Backend: tsx with auto-restart on file changes
+- Database: Neon Serverless PostgreSQL
+
+### Production
+- Frontend: Static build served by Express
+- Backend: Bundled with ESBuild and served via Node.js
+- Database: Neon Serverless PostgreSQL with connection pooling
+- Sessions: Persistent session storage in PostgreSQL
+
+### Environment Configuration
+- Database connection via `DATABASE_URL` environment variable
+- Session secret via `SESSION_SECRET` environment variable
+- Production/development mode detection via `NODE_ENV`
+
+## Changelog
+- July 06, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
