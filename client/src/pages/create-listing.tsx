@@ -23,7 +23,7 @@ export default function CreateListing() {
   const [, navigate] = useLocation();
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   const form = useForm<InsertProperty>({
     resolver: zodResolver(insertPropertySchema),
@@ -74,10 +74,12 @@ export default function CreateListing() {
     },
   });
 
-  const addImageUrl = () => {
-    if (newImageUrl.trim() && !imageUrls.includes(newImageUrl.trim())) {
-      setImageUrls([...imageUrls, newImageUrl.trim()]);
-      setNewImageUrl("");
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(e.target.files);
+      // Convert files to URLs for preview
+      const urls = Array.from(e.target.files).map(file => URL.createObjectURL(file));
+      setImageUrls(urls);
     }
   };
 
@@ -249,57 +251,30 @@ export default function CreateListing() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Billede URL (valgfrit)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="https://example.com/image.jpg" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Multiple image URLs */}
+                {/* File upload for images */}
                 <div className="space-y-3">
-                  <FormLabel>Flere billeder (valgfrit)</FormLabel>
-                  <div className="flex space-x-2">
-                    <Input
-                      placeholder="Tilføj billede URL"
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addImageUrl();
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addImageUrl}
-                      disabled={!newImageUrl.trim()}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <FormLabel>Billeder (valgfrit)</FormLabel>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    className="cursor-pointer"
+                  />
                   {imageUrls.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4 mt-4">
                       {imageUrls.map((url, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <span className="text-sm truncate flex-1">{url}</span>
+                        <div key={index} className="relative">
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="destructive"
                             size="sm"
+                            className="absolute top-2 right-2 h-6 w-6 p-0"
                             onClick={() => removeImageUrl(url)}
                           >
                             <X className="h-4 w-4" />

@@ -155,10 +155,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteProperty(id: number, userId: number): Promise<boolean> {
+    // First delete all messages related to this property
+    await db
+      .delete(messages)
+      .where(eq(messages.propertyId, id));
+    
+    // Then delete the property
     const result = await db
       .delete(properties)
       .where(and(eq(properties.id, id), eq(properties.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Message operations
