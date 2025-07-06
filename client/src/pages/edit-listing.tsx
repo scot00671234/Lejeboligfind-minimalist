@@ -75,12 +75,18 @@ export default function EditListing() {
       let finalData = { ...data };
       
       if (imageFile) {
-        const formData = new FormData();
-        formData.append("image", imageFile);
+        // Convert image to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
         
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
+        const base64Image = await base64Promise;
+        
+        const uploadResponse = await apiRequest("POST", "/api/upload", {
+          image: base64Image,
         });
         
         if (uploadResponse.ok) {

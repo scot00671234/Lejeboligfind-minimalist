@@ -37,6 +37,13 @@ function getSession() {
   });
 }
 
+// Extend session type
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+  }
+}
+
 // Auth middleware
 function requireAuth(req: any, res: any, next: any) {
   if (!req.session?.userId) {
@@ -261,6 +268,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Mark message as read error:", error);
       res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  // Image upload endpoint (simplified - stores as base64 in database)
+  app.post("/api/upload", requireAuth, async (req, res) => {
+    try {
+      // For now, we'll use a simple base64 approach
+      // In production, you'd use a proper file storage service
+      const imageData = req.body.image;
+      if (!imageData) {
+        return res.status(400).json({ message: "No image provided" });
+      }
+      
+      // Return the image URL (in this case, the base64 data)
+      res.json({ imageUrl: imageData });
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({ message: "Failed to upload image" });
     }
   });
 

@@ -87,6 +87,20 @@ export default function PropertyDetail() {
     }
   };
 
+  const getAreaFromAddress = (address: string) => {
+    // Extract area/district from address, removing specific street details
+    const parts = address.split(',');
+    if (parts.length >= 2) {
+      return parts[parts.length - 1].trim(); // Return last part (city/area)
+    }
+    // If no comma, try to extract city/area from the end
+    const words = address.split(' ');
+    if (words.length >= 2) {
+      return words[words.length - 1]; // Return last word (likely city)
+    }
+    return address; // Fallback
+  };
+
   const canContactLandlord = isAuthenticated && user?.id !== property.userId;
 
   return (
@@ -140,7 +154,7 @@ export default function PropertyDetail() {
               <div className="space-y-2">
                 <div className="flex items-center text-muted-foreground">
                   <MapPin className="h-4 w-4 mr-2" />
-                  <span>{property.address}</span>
+                  <span>{getAreaFromAddress(property.address)}</span>
                 </div>
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center">

@@ -31,6 +31,20 @@ export function PropertyCard({ property }: PropertyCardProps) {
     }
   };
 
+  const getAreaFromAddress = (address: string) => {
+    // Extract area/district from address, removing specific street details
+    const parts = address.split(',');
+    if (parts.length >= 2) {
+      return parts[parts.length - 1].trim(); // Return last part (city/area)
+    }
+    // If no comma, try to extract city/area from the end
+    const words = address.split(' ');
+    if (words.length >= 2) {
+      return words[words.length - 1]; // Return last word (likely city)
+    }
+    return address; // Fallback
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
@@ -58,7 +72,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         
         <div className="flex items-center text-muted-foreground text-sm mb-3">
           <MapPin className="h-4 w-4 mr-1" />
-          <span className="line-clamp-1">{property.address}</span>
+          <span className="line-clamp-1">{getAreaFromAddress(property.address)}</span>
         </div>
         
         <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
