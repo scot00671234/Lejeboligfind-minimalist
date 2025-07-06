@@ -144,6 +144,18 @@ export default function EditListing() {
     }
   }, [isAuthenticated, isLoading, navigate, toast]);
 
+  // Check property ownership after data loads
+  useEffect(() => {
+    if (property && user && property.userId !== user.id) {
+      toast({
+        title: "Adgang nægtet",
+        description: "Du kan kun redigere dine egne boliger",
+        variant: "destructive",
+      });
+      navigate("/mine-boliger");
+    }
+  }, [property, user, navigate, toast]);
+
   if (isLoading || propertyLoading) {
     return (
       <div className="min-h-screen bg-background py-8">
@@ -159,17 +171,6 @@ export default function EditListing() {
   }
 
   if (!isAuthenticated || !property) {
-    return null;
-  }
-
-  // Check if user owns this property
-  if (property.userId !== user?.id) {
-    toast({
-      title: "Adgang nægtet",
-      description: "Du kan kun redigere dine egne boliger",
-      variant: "destructive",
-    });
-    navigate("/mine-boliger");
     return null;
   }
 
