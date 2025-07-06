@@ -80,7 +80,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         <div className="mt-4 flex justify-center">
           <Button onClick={handleSearch} className="flex items-center space-x-2">
             <Search className="h-4 w-4" />
-            <span>Søg boliger</span>
+            <span>Søg lejeboliger i hele Danmark</span>
           </Button>
         </div>
       </CardContent>

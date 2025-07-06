@@ -166,21 +166,7 @@ export default function PropertyDetail() {
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Faciliteter</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {['Kæledyr tilladt', 'Balkon', 'Vaskemaskine', 'Parkering'].map((facility) => (
-                    <div key={facility} className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">{facility}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+
             
             <Card>
               <CardHeader>

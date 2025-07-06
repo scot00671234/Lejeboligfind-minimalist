@@ -191,9 +191,11 @@ export default function MyListings() {
                         </Button>
                       </Link>
                       
-                      <Button variant="outline" size="sm" disabled>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <Link href={`/rediger-bolig/${property.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

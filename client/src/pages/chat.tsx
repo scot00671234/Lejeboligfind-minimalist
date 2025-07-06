@@ -58,7 +58,7 @@ export default function Chat() {
         receiverId: data.receiverId,
         senderId: user!.id,
       };
-      await apiRequest("/api/messages", "POST", messageData);
+      await apiRequest("POST", "/api/messages", messageData);
     },
     onSuccess: () => {
       setNewMessage("");
