@@ -119,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/auth/me", requireAuth, async (req, res) => {
+  app.get("/api/auth/me", requireAuth, async (req: any, res: any) => {
     try {
       const user = await storage.getUser(req.session.userId);
       if (!user) {
@@ -161,14 +161,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Property not found" });
       }
       
-      res.json(property);
+      // Return the property with userId for editing purposes
+      const propertyWithUserId = {
+        ...property,
+        userId: property.user?.id || property.userId
+      };
+      
+      res.json(propertyWithUserId);
     } catch (error) {
       console.error("Get property error:", error);
       res.status(500).json({ message: "Failed to get property" });
     }
   });
 
-  app.post("/api/properties", requireAuth, async (req, res) => {
+  app.post("/api/properties", requireAuth, async (req: any, res: any) => {
     try {
       const data = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(data, req.session.userId);
@@ -179,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/properties/:id", requireAuth, async (req, res) => {
+  app.put("/api/properties/:id", requireAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       const data = insertPropertySchema.partial().parse(req.body);
@@ -197,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/properties/:id", requireAuth, async (req, res) => {
+  app.delete("/api/properties/:id", requireAuth, async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteProperty(id, req.session.userId);
@@ -213,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/my-properties", requireAuth, async (req, res) => {
+  app.get("/api/my-properties", requireAuth, async (req: any, res: any) => {
     try {
       const properties = await storage.getUserProperties(req.session.userId);
       res.json(properties);
@@ -223,8 +229,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image upload route
+  app.post("/api/upload", requireAuth, async (req: any, res: any) => {
+    try {
+      const { image } = req.body;
+      
+      if (!image) {
+        return res.status(400).json({ message: "No image provided" });
+      }
+      
+      // For now, we'll just return the base64 image as the URL
+      // In a real app, you would upload to a cloud storage service
+      res.json({ imageUrl: image });
+    } catch (error) {
+      console.error("Image upload error:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
   // Message routes
-  app.post("/api/messages", requireAuth, async (req, res) => {
+  app.post("/api/messages", requireAuth, async (req: any, res: any) => {
     try {
       const data = insertMessageSchema.parse({
         ...req.body,
@@ -239,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/properties/:id/messages", requireAuth, async (req, res) => {
+  app.get("/api/properties/:id/messages", requireAuth, async (req: any, res: any) => {
     try {
       const propertyId = parseInt(req.params.id);
       const messages = await storage.getPropertyMessages(propertyId, req.session.userId);
@@ -250,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/messages", requireAuth, async (req, res) => {
+  app.get("/api/messages", requireAuth, async (req: any, res: any) => {
     try {
       const messages = await storage.getAllUserMessages(req.session.userId);
       res.json(messages);

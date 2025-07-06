@@ -43,7 +43,7 @@ export default function Home() {
               Find din næste bolig
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Søg blandt tusindvis af lejeboliger i hele Danmark
+              Søg lejeboliger i hele Danmark
             </p>
           </div>
           
