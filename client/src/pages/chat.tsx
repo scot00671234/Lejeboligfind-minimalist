@@ -39,30 +39,15 @@ export default function Chat() {
   const queryKey = [`/api/messages?t=${Date.now()}`, user?.id];
   
   const { data: messages, isLoading: messagesLoading, refetch } = useQuery<ConversationMessage[]>({
-    queryKey,
-    enabled: isAuthenticated && !!user,
-    refetchInterval: 2000,
+    queryKey: ["/api/messages"],
+    enabled: isAuthenticated,
+    refetchInterval: 1000,
     refetchIntervalInBackground: true,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
-    networkMode: 'always',
-    queryFn: async () => {
-      // Force fresh request with cache-busting
-      const response = await fetch(`/api/messages?nocache=${Date.now()}`, {
-        credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
-      return response.json();
-    }
   });
 
   useEffect(() => {
@@ -123,9 +108,9 @@ export default function Chat() {
     },
     onSuccess: async () => {
       setNewMessage("");
-      console.log("Message sent successfully, force refreshing...");
-      // Force page reload to bypass all caching issues
-      window.location.reload();
+      console.log("Message sent successfully, refreshing data...");
+      // Force immediate refetch
+      await refetch();
     },
     onError: (error: Error) => {
       console.error("Message send error:", error);
@@ -152,7 +137,19 @@ export default function Chat() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg mb-4">Du skal logge ind for at se beskeder</p>
+          <button 
+            onClick={() => navigate("/")}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Gå til forsiden
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Group messages by conversation - simplified approach
