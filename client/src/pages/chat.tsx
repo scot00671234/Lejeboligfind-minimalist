@@ -41,7 +41,9 @@ export default function Chat() {
     refetchInterval: 1000, // Refetch every 1 second for faster updates
     refetchIntervalInBackground: true,
     staleTime: 0, // Always consider data stale for fresh fetches
-    cacheTime: 0, // Don't cache data
+    gcTime: 0, // Don't cache data (React Query v5 syntax)
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   useEffect(() => {
@@ -101,12 +103,14 @@ export default function Chat() {
     },
     onSuccess: async () => {
       setNewMessage("");
-      // Force immediate cache invalidation and refetch
-      queryClient.removeQueries({ queryKey: ["/api/messages"] });
+      // Immediately invalidate and refetch messages
+      await queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       await queryClient.refetchQueries({ queryKey: ["/api/messages"] });
-      // Also update selected conversation immediately if it exists
+      // Force selected conversation update
       if (selectedConversation) {
-        await refetch();
+        setTimeout(() => {
+          refetch();
+        }, 50);
       }
     },
     onError: (error: Error) => {
@@ -276,35 +280,41 @@ export default function Chat() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {selectedConversation.messages.map((message, index) => {
                   const isCurrentUser = message.senderId === user?.id;
                   const showName = index === 0 || 
                     selectedConversation.messages[index - 1].senderId !== message.senderId;
                   
                   return (
-                    <div key={message.id} className={`w-full ${isCurrentUser ? "flex justify-end" : "flex justify-start"}`}>
-                      <div className={`max-w-xs ${isCurrentUser ? "items-end" : "items-start"} flex flex-col`}>
-                        {showName && (
-                          <p className={`text-xs text-muted-foreground mb-1 px-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                            {isCurrentUser ? "Du" : (message.sender.name || message.sender.email)}
+                    <div key={message.id} className="w-full">
+                      <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} mb-2`}>
+                        <div className={`max-w-sm ${isCurrentUser ? "items-end" : "items-start"} flex flex-col`}>
+                          {showName && (
+                            <p className={`text-xs text-gray-500 mb-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
+                              {isCurrentUser ? "Du" : (message.sender.name || message.sender.email)}
+                            </p>
+                          )}
+                          <div
+                            className={`px-4 py-3 rounded-2xl ${
+                              isCurrentUser
+                                ? "bg-blue-500 text-white rounded-br-md"
+                                : "bg-gray-200 text-gray-900 rounded-bl-md"
+                            }`}
+                            style={{
+                              maxWidth: "75%",
+                              wordWrap: "break-word"
+                            }}
+                          >
+                            <p className="text-sm">{message.content}</p>
+                          </div>
+                          <p className={`text-xs text-gray-400 mt-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
+                            {new Date(message.createdAt!).toLocaleString("da-DK", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
-                        )}
-                        <div
-                          className={`px-4 py-2 rounded-lg max-w-xs ${
-                            isCurrentUser
-                              ? "bg-blue-500 text-white rounded-br-sm ml-auto"
-                              : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-sm mr-auto"
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
                         </div>
-                        <p className={`text-xs opacity-70 mt-1 px-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                          {new Date(message.createdAt!).toLocaleString("da-DK", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
                       </div>
                     </div>
                   );
