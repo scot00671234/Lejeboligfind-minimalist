@@ -102,9 +102,9 @@ export default function Chat() {
   }
 
   // Find beskeder for nuværende bruger
-  const myMessages = messages?.filter(msg => 
+  const myMessages = Array.isArray(messages) ? messages.filter(msg => 
     msg.senderId === user!.id || msg.receiverId === user!.id
-  ) || [];
+  ) : [];
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -181,9 +181,10 @@ export default function Chat() {
 
             {/* Debug info */}
             <div className="mt-4 p-2 bg-gray-100 rounded text-sm">
-              <p>Total beskeder: {messages?.length || 0}</p>
+              <p>Total beskeder: {Array.isArray(messages) ? messages.length : 0}</p>
               <p>Mine beskeder: {myMessages.length}</p>
               <p>Sender til: User {receiverId}</p>
+              <p>Messages type: {typeof messages}</p>
             </div>
           </CardContent>
         </Card>
