@@ -115,11 +115,20 @@ export default function CreateListing() {
   };
 
   const onSubmit = (data: InsertProperty) => {
+    console.log("Form submission debug:", {
+      imageUrlsState: imageUrls,
+      imageUrlsLength: imageUrls.length,
+      firstImageUrl: imageUrls[0],
+      formData: data
+    });
+    
     const propertyData: InsertProperty = {
       ...data,
       imageUrl: imageUrls.length > 0 ? imageUrls[0] : undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
     };
+    
+    console.log("Property data being sent:", propertyData);
     createProperty.mutate(propertyData);
   };
 

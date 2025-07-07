@@ -75,17 +75,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProperties(search?: PropertySearch): Promise<PropertyWithUser[]> {
-    let query = db
-      .select()
-      .from(properties)
-      .leftJoin(users, eq(properties.userId, users.id))
-      .where(eq(properties.available, true));
+    const allConditions = [eq(properties.available, true)];
 
     if (search) {
-      const conditions = [];
-      
       if (search.query) {
-        conditions.push(
+        allConditions.push(
           or(
             ilike(properties.title, `%${search.query}%`),
             ilike(properties.address, `%${search.query}%`),
@@ -95,29 +89,31 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (search.type) {
-        conditions.push(eq(properties.type, search.type));
+        allConditions.push(eq(properties.type, search.type));
       }
       
       if (search.minPrice) {
-        conditions.push(gte(properties.price, search.minPrice));
+        allConditions.push(gte(properties.price, search.minPrice));
       }
       
       if (search.maxPrice) {
-        conditions.push(lte(properties.price, search.maxPrice));
+        allConditions.push(lte(properties.price, search.maxPrice));
       }
       
       if (search.minRooms) {
-        conditions.push(gte(properties.rooms, search.minRooms));
+        allConditions.push(gte(properties.rooms, search.minRooms));
       }
       
       if (search.maxRooms) {
-        conditions.push(lte(properties.rooms, search.maxRooms));
-      }
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        allConditions.push(lte(properties.rooms, search.maxRooms));
       }
     }
+
+    const query = db
+      .select()
+      .from(properties)
+      .leftJoin(users, eq(properties.userId, users.id))
+      .where(and(...allConditions));
 
     const results = await query.orderBy(desc(properties.createdAt));
     
