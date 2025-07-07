@@ -195,7 +195,7 @@ export default function PropertyDetail() {
                     <User className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium">{property.user.name}</p>
+                    <p className="font-medium">{property.user?.name || property.user?.email || 'Udlejer'}</p>
                     <p className="text-sm text-muted-foreground">Udlejer</p>
                   </div>
                 </div>

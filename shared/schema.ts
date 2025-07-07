@@ -45,12 +45,12 @@ export const properties = pgTable("properties", {
 // Messages table for landlord-tenant communication
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  content: text("content").notNull(),
   propertyId: integer("property_id").references(() => properties.id).notNull(),
   senderId: integer("sender_id").references(() => users.id).notNull(),
   receiverId: integer("receiver_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  read: boolean("read").default(false),
+  content: text("content").notNull(),
+  read: boolean("is_read").default(false),
+  createdAt: timestamp("sent_at").defaultNow(),
 });
 
 // Relations
