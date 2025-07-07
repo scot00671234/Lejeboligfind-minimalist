@@ -63,18 +63,16 @@ export default function Chat() {
   // Auto-update selected conversation when messages change
   useEffect(() => {
     if (selectedConversation && messages && user) {
-      // Find the updated conversation using the same logic as conversation grouping
       const otherUserId = selectedConversation.otherUser.id;
-      const userIds = [user.id, otherUserId].sort((a, b) => a - b);
-      const conversationKey = `${selectedConversation.propertyId}-${userIds[0]}-${userIds[1]}`;
       
-      // Filter messages for this specific conversation
-      const conversationMessages = messages.filter(message => {
-        const messageOtherUserId = message.senderId === user.id ? message.receiverId : message.senderId;
-        const messageUserIds = [user.id, messageOtherUserId].sort((a, b) => a - b);
-        const messageKey = `${message.propertyId}-${messageUserIds[0]}-${messageUserIds[1]}`;
-        return messageKey === conversationKey;
-      });
+      // Filter messages for this specific conversation and property
+      const conversationMessages = messages.filter(message =>
+        message.propertyId === selectedConversation.propertyId &&
+        (
+          (message.senderId === user.id && message.receiverId === otherUserId) ||
+          (message.senderId === otherUserId && message.receiverId === user.id)
+        )
+      );
 
       // Update selected conversation with latest messages
       if (conversationMessages.length > 0) {
@@ -134,54 +132,65 @@ export default function Chat() {
   const conversations: ConversationGroup[] = [];
   
   if (messages && user) {
-    // First, filter out invalid messages (where sender = receiver)
+    // Filter out invalid messages (where sender = receiver)
     const validMessages = messages.filter(message => 
       message.senderId !== message.receiverId
     );
 
-    const groupedMessages = validMessages.reduce((acc, message) => {
-      // Determine the other user in the conversation
-      const otherUserId = message.senderId === user.id ? message.receiverId : message.senderId;
-      
-      // Skip if this user is talking to themselves (shouldn't happen with filter above)
-      if (otherUserId === user.id) return acc;
-      
-      // Create a consistent key by sorting user IDs to ensure same conversation regardless of who sends
-      const userIds = [user.id, otherUserId].sort((a, b) => a - b);
-      const key = `${message.propertyId}-${userIds[0]}-${userIds[1]}`;
-      
-      if (!acc[key]) {
-        acc[key] = [];
+    // Group messages by property and create unified conversations
+    const propertyGroups = validMessages.reduce((acc, message) => {
+      const propertyId = message.propertyId;
+      if (!acc[propertyId]) {
+        acc[propertyId] = [];
       }
-      acc[key].push(message);
+      acc[propertyId].push(message);
       return acc;
-    }, {} as Record<string, ConversationMessage[]>);
+    }, {} as Record<number, ConversationMessage[]>);
 
-    Object.values(groupedMessages).forEach(messageGroup => {
-      if (messageGroup.length > 0) {
-        const sortedMessages = messageGroup.sort((a, b) => 
-          new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+    // For each property, create a single conversation with all participants
+    Object.entries(propertyGroups).forEach(([propertyId, propertyMessages]) => {
+      if (propertyMessages.length === 0) return;
+
+      // Get all unique users involved in this property conversation (excluding current user)
+      const allUserIds = new Set<number>();
+      propertyMessages.forEach(message => {
+        if (message.senderId !== user.id) allUserIds.add(message.senderId);
+        if (message.receiverId !== user.id) allUserIds.add(message.receiverId);
+      });
+
+      // For each other user, create a conversation
+      allUserIds.forEach(otherUserId => {
+        // Get messages between current user and this other user for this property
+        const conversationMessages = propertyMessages.filter(message =>
+          (message.senderId === user.id && message.receiverId === otherUserId) ||
+          (message.senderId === otherUserId && message.receiverId === user.id)
         );
-        
-        const firstMessage = sortedMessages[0];
-        const lastMessage = sortedMessages[sortedMessages.length - 1];
-        
-        // Determine the other user from the first message
-        const otherUser = firstMessage.senderId === user.id ? firstMessage.receiver : firstMessage.sender;
-        
-        const unreadCount = sortedMessages.filter(m => 
-          m.receiverId === user.id && !m.read
-        ).length;
 
-        conversations.push({
-          propertyId: firstMessage.propertyId,
-          propertyTitle: firstMessage.property.title,
-          otherUser,
-          messages: sortedMessages,
-          lastMessage,
-          unreadCount,
-        });
-      }
+        if (conversationMessages.length > 0) {
+          const sortedMessages = conversationMessages.sort((a, b) => 
+            new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+          );
+          
+          const firstMessage = sortedMessages[0];
+          const lastMessage = sortedMessages[sortedMessages.length - 1];
+          
+          // Find the other user object
+          const otherUser = firstMessage.senderId === otherUserId ? firstMessage.sender : firstMessage.receiver;
+          
+          const unreadCount = sortedMessages.filter(m => 
+            m.receiverId === user.id && !m.read
+          ).length;
+
+          conversations.push({
+            propertyId: parseInt(propertyId),
+            propertyTitle: firstMessage.property.title,
+            otherUser,
+            messages: sortedMessages,
+            lastMessage,
+            unreadCount,
+          });
+        }
+      });
     });
   }
 
