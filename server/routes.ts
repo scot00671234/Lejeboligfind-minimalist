@@ -210,8 +210,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/properties/:id", requireAuth, async (req: any, res: any) => {
     try {
+      console.log("PUT - Updating property with ID:", req.params.id);
+      console.log("PUT - Update data:", req.body);
       const id = parseInt(req.params.id);
       const data = insertPropertySchema.partial().parse(req.body);
+      console.log("PUT - Parsed update data:", data);
       
       const property = await storage.updateProperty(id, data, req.session.userId);
       
@@ -219,10 +222,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Property not found or not owned by user" });
       }
       
+      console.log("PUT - Updated property:", property);
       res.json(property);
     } catch (error) {
-      console.error("Update property error:", error);
-      res.status(400).json({ message: "Invalid property data" });
+      console.error("PUT - Update property error:", error);
+      if (error instanceof Error) {
+        console.error("PUT - Error message:", error.message);
+        console.error("PUT - Error stack:", error.stack);
+      }
+      res.status(400).json({ message: "Invalid property data", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.patch("/api/properties/:id", requireAuth, async (req: any, res: any) => {
+    try {
+      console.log("PATCH - Updating property with ID:", req.params.id);
+      console.log("PATCH - Update data:", req.body);
+      const id = parseInt(req.params.id);
+      const data = insertPropertySchema.partial().parse(req.body);
+      console.log("PATCH - Parsed update data:", data);
+      
+      const property = await storage.updateProperty(id, data, req.session.userId);
+      
+      if (!property) {
+        return res.status(404).json({ message: "Property not found or not owned by user" });
+      }
+      
+      console.log("PATCH - Updated property:", property);
+      res.json(property);
+    } catch (error) {
+      console.error("PATCH - Update property error:", error);
+      if (error instanceof Error) {
+        console.error("PATCH - Error message:", error.message);
+        console.error("PATCH - Error stack:", error.stack);
+      }
+      res.status(400).json({ message: "Invalid property data", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
