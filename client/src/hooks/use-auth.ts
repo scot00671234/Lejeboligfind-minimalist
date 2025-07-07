@@ -75,9 +75,17 @@ export function useRegister() {
       });
     },
     onError: (error: Error) => {
+      let description = error.message;
+      let title = "Registrering fejl";
+      
+      if (error.message.includes("Email already registered")) {
+        title = "Email allerede i brug";
+        description = "Denne email er allerede registreret. Prøv at logge ind i stedet.";
+      }
+      
       toast({
-        title: "Registrering fejl",
-        description: error.message,
+        title,
+        description,
         variant: "destructive",
       });
     },

@@ -53,6 +53,13 @@ export function AuthModal({ isOpen, onClose, mode, onSwitchMode }: AuthModalProp
         onClose();
         registerForm.reset();
       },
+      onError: (error: Error) => {
+        // If email is already registered, switch to login mode and pre-fill email
+        if (error.message.includes("Email already registered")) {
+          loginForm.setValue("email", data.email);
+          onSwitchMode("login");
+        }
+      },
     });
   };
 
