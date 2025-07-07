@@ -192,12 +192,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/properties", requireAuth, async (req: any, res: any) => {
     try {
+      console.log("Creating property with data:", req.body);
       const data = insertPropertySchema.parse(req.body);
+      console.log("Parsed data:", data);
       const property = await storage.createProperty(data, req.session.userId);
+      console.log("Created property:", property);
       res.json(property);
     } catch (error) {
       console.error("Create property error:", error);
-      res.status(400).json({ message: "Invalid property data" });
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      res.status(400).json({ message: "Invalid property data", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
