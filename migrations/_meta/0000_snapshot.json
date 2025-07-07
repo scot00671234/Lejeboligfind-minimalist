@@ -1,0 +1,6 @@
+{
+  "id": "0000_initial_schema",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql"
+}

@@ -124,6 +124,11 @@ Lejebolig Find is a Danish rental property platform that connects property owner
 - July 06, 2025. Database cleanup:
   - Removed test/mock data from database
   - Cleaned up properties with invalid blob URLs
+- July 07, 2025. Migration to Replit environment:
+  - Added automatic database schema deployment system
+  - Created server/migrations.ts for Railway/production compatibility
+  - Database tables now auto-create on application startup
+  - Removed dependency on manual drizzle-kit commands for production
 - July 07, 2025. Project migration to Replit environment:
   - Migrated from Replit Agent to standard Replit environment
   - Set up PostgreSQL database with proper environment variables
