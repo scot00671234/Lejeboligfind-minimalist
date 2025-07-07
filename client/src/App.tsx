@@ -10,6 +10,7 @@ import CreateListing from "@/pages/create-listing";
 import EditListing from "@/pages/edit-listing";
 import MyListings from "@/pages/my-listings";
 import Chat from "@/pages/chat";
+import SimpleChat from "@/pages/simple-chat";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
         <Route path="/rediger-bolig/:id" component={EditListing} />
         <Route path="/mine-boliger" component={MyListings} />
         <Route path="/beskeder" component={Chat} />
+        <Route path="/simple-chat" component={SimpleChat} />
         <Route component={NotFound} />
       </Switch>
     </div>

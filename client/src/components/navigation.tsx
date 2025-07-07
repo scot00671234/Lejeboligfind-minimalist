@@ -59,6 +59,14 @@ export function Navigation() {
                       Beskeder
                     </Button>
                   </Link>
+                  <Link href="/simple-chat">
+                    <Button 
+                      variant={location === "/simple-chat" ? "default" : "ghost"}
+                      size="sm"
+                    >
+                      Simpel Chat
+                    </Button>
+                  </Link>
                   <Button 
                     variant="ghost" 
                     size="sm" 
