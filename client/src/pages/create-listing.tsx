@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,11 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { insertPropertySchema } from "@shared/schema";
 import type { InsertProperty } from "@shared/schema";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useEffect, useState } from "react";
 import { X, Plus } from "lucide-react";
 
 export default function CreateListing() {
+  const { id } = useParams();
+  const isEditing = !!id;
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -24,6 +26,12 @@ export default function CreateListing() {
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+
+  // Load existing property data for editing
+  const { data: existingProperty, isLoading: loadingProperty } = useQuery({
+    queryKey: ['/api/properties', id],
+    enabled: isEditing && !!id,
+  }) as { data: any, isLoading: boolean };
 
   const form = useForm<InsertProperty>({
     resolver: zodResolver(insertPropertySchema),
@@ -51,19 +59,40 @@ export default function CreateListing() {
     }
   }, [isAuthenticated, isLoading, navigate, toast]);
 
+  // Update form with existing property data for editing
+  useEffect(() => {
+    if (existingProperty && isEditing) {
+      form.reset({
+        title: existingProperty.title,
+        description: existingProperty.description,
+        address: existingProperty.address,
+        price: existingProperty.price,
+        rooms: existingProperty.rooms,
+        size: existingProperty.size,
+        type: existingProperty.type,
+        available: existingProperty.available,
+      });
+      if (existingProperty.imageUrls) {
+        setImageUrls(existingProperty.imageUrls);
+      }
+    }
+  }, [existingProperty, isEditing, form]);
+
   const createProperty = useMutation({
     mutationFn: async (data: InsertProperty) => {
-      const response = await apiRequest("POST", "/api/properties", data);
+      const url = isEditing ? `/api/properties/${id}` : "/api/properties";
+      const method = isEditing ? "PATCH" : "POST";
+      const response = await apiRequest(method, url, data);
       return response.json();
     },
-    onSuccess: (newProperty) => {
+    onSuccess: (property) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-properties"] });
       toast({
-        title: "Bolig oprettet",
-        description: "Din bolig er nu tilgængelig for lejere",
+        title: isEditing ? "Bolig opdateret" : "Bolig oprettet",
+        description: isEditing ? "Dine ændringer er gemt" : "Din bolig er nu tilgængelig for lejere",
       });
-      navigate(`/bolig/${newProperty.id}`);
+      navigate(`/bolig/${property.id}`);
     },
     onError: (error: Error) => {
       toast({
@@ -76,6 +105,7 @@ export default function CreateListing() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      console.log("Starting file upload process for", e.target.files.length, "files");
       setSelectedFiles(e.target.files);
       
       // Upload files to server and get URLs
@@ -83,6 +113,7 @@ export default function CreateListing() {
       
       for (const file of Array.from(e.target.files)) {
         try {
+          console.log("Processing file:", file.name);
           // Convert file to base64
           const reader = new FileReader();
           const base64Promise = new Promise<string>((resolve, reject) => {
@@ -93,8 +124,10 @@ export default function CreateListing() {
           const base64 = await base64Promise;
           
           // Upload to server
+          console.log("Uploading file to server...");
           const response = await apiRequest("POST", "/api/upload", { image: base64 });
           const result = await response.json();
+          console.log("Upload successful, received URL:", result.imageUrl);
           uploadedUrls.push(result.imageUrl);
         } catch (error) {
           console.error('Error uploading file:', error);
@@ -106,7 +139,12 @@ export default function CreateListing() {
         }
       }
       
-      setImageUrls(uploadedUrls);
+      console.log("All uploads complete. Adding URLs to state:", uploadedUrls);
+      setImageUrls(prev => {
+        const newUrls = [...prev, ...uploadedUrls];
+        console.log("Updated imageUrls state:", newUrls);
+        return newUrls;
+      });
     }
   };
 
@@ -114,7 +152,7 @@ export default function CreateListing() {
     setImageUrls(imageUrls.filter(u => u !== url));
   };
 
-  const onSubmit = (data: InsertProperty) => {
+  const onSubmit = async (data: InsertProperty) => {
     console.log("Form submission debug:", {
       imageUrlsState: imageUrls,
       imageUrlsLength: imageUrls.length,
@@ -122,10 +160,13 @@ export default function CreateListing() {
       formData: data
     });
     
+    // Ensure we have the latest image URLs
+    const currentImageUrls = [...imageUrls];
+    
     const propertyData: InsertProperty = {
       ...data,
-      imageUrl: imageUrls.length > 0 ? imageUrls[0] : undefined,
-      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      imageUrl: currentImageUrls.length > 0 ? currentImageUrls[0] : undefined,
+      imageUrls: currentImageUrls.length > 0 ? currentImageUrls : undefined,
     };
     
     console.log("Property data being sent:", propertyData);
@@ -155,7 +196,7 @@ export default function CreateListing() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card>
           <CardHeader>
-            <CardTitle>Opret boligopslag</CardTitle>
+            <CardTitle>{isEditing ? 'Rediger bolig' : 'Opret boligopslag'}</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>

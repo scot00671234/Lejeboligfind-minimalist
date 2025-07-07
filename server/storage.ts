@@ -75,11 +75,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProperties(search?: PropertySearch): Promise<PropertyWithUser[]> {
-    const allConditions = [eq(properties.available, true)];
+    let query = db
+      .select()
+      .from(properties)
+      .leftJoin(users, eq(properties.userId, users.id))
+      .where(eq(properties.available, true));
 
     if (search) {
+      const searchConditions = [];
+      
       if (search.query) {
-        allConditions.push(
+        searchConditions.push(
           or(
             ilike(properties.title, `%${search.query}%`),
             ilike(properties.address, `%${search.query}%`),
@@ -89,31 +95,33 @@ export class DatabaseStorage implements IStorage {
       }
       
       if (search.type) {
-        allConditions.push(eq(properties.type, search.type));
+        searchConditions.push(eq(properties.type, search.type));
       }
       
       if (search.minPrice) {
-        allConditions.push(gte(properties.price, search.minPrice));
+        searchConditions.push(gte(properties.price, search.minPrice));
       }
       
       if (search.maxPrice) {
-        allConditions.push(lte(properties.price, search.maxPrice));
+        searchConditions.push(lte(properties.price, search.maxPrice));
       }
       
       if (search.minRooms) {
-        allConditions.push(gte(properties.rooms, search.minRooms));
+        searchConditions.push(gte(properties.rooms, search.minRooms));
       }
       
       if (search.maxRooms) {
-        allConditions.push(lte(properties.rooms, search.maxRooms));
+        searchConditions.push(lte(properties.rooms, search.maxRooms));
+      }
+
+      if (searchConditions.length > 0) {
+        query = db
+          .select()
+          .from(properties)
+          .leftJoin(users, eq(properties.userId, users.id))
+          .where(and(eq(properties.available, true), ...searchConditions));
       }
     }
-
-    const query = db
-      .select()
-      .from(properties)
-      .leftJoin(users, eq(properties.userId, users.id))
-      .where(and(...allConditions));
 
     const results = await query.orderBy(desc(properties.createdAt));
     
