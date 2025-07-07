@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, ArrowLeft, Send } from "lucide-react";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Message, Property, User, InsertMessage } from "@shared/schema";
 
@@ -33,6 +33,7 @@ export default function Chat() {
   
   const [selectedConversation, setSelectedConversation] = useState<ConversationGroup | null>(null);
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -44,6 +45,24 @@ export default function Chat() {
       navigate("/");
     }
   }, [isAuthenticated, isLoading, navigate, toast]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [selectedConversation?.messages]);
+
+  // Poll for new messages every 3 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, queryClient]);
 
   const { data: messages, isLoading: messagesLoading } = useQuery<ConversationMessage[]>({
     queryKey: ["/api/messages"],
@@ -62,7 +81,9 @@ export default function Chat() {
     },
     onSuccess: () => {
       setNewMessage("");
+      // Refetch messages immediately to show new message
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      queryClient.refetchQueries({ queryKey: ["/api/messages"] });
     },
     onError: (error: Error) => {
       toast({
@@ -252,6 +273,7 @@ export default function Chat() {
                     </div>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message input */}
