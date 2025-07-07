@@ -146,23 +146,13 @@ export default function EditListing() {
 
   // Check property ownership after data loads
   useEffect(() => {
-    if (property && user) {
-      console.log("Ownership check:", {
-        propertyUserId: property.userId,
-        currentUserId: user.id,
-        propertyUserIdType: typeof property.userId,
-        currentUserIdType: typeof user.id,
-        areEqual: property.userId === user.id
+    if (property && user && property.userId !== user.id) {
+      toast({
+        title: "Adgang nægtet",
+        description: "Du kan kun redigere dine egne boliger",
+        variant: "destructive",
       });
-      
-      if (property.userId !== user.id) {
-        toast({
-          title: "Adgang nægtet",
-          description: "Du kan kun redigere dine egne boliger",
-          variant: "destructive",
-        });
-        navigate("/mine-boliger");
-      }
+      navigate("/mine-boliger");
     }
   }, [property, user, navigate, toast]);
 
