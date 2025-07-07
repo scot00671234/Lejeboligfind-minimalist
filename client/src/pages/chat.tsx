@@ -38,12 +38,13 @@ export default function Chat() {
   const { data: messages, isLoading: messagesLoading, refetch } = useQuery<ConversationMessage[]>({
     queryKey: ["/api/messages"],
     enabled: isAuthenticated,
-    refetchInterval: 1000, // Refetch every 1 second for faster updates
+    refetchInterval: 500, // Refetch every 500ms for instant updates
     refetchIntervalInBackground: true,
-    staleTime: 0, // Always consider data stale for fresh fetches
-    gcTime: 0, // Don't cache data (React Query v5 syntax)
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache data
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
@@ -103,15 +104,11 @@ export default function Chat() {
     },
     onSuccess: async () => {
       setNewMessage("");
-      // Immediately invalidate and refetch messages
-      await queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/messages"] });
-      // Force selected conversation update
-      if (selectedConversation) {
-        setTimeout(() => {
-          refetch();
-        }, 50);
-      }
+      // Clear cache and force immediate refresh
+      queryClient.setQueryData(["/api/messages"], undefined);
+      queryClient.removeQueries({ queryKey: ["/api/messages"] });
+      // Immediate refetch without waiting
+      refetch();
     },
     onError: (error: Error) => {
       toast({
@@ -280,7 +277,7 @@ export default function Chat() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
                 {selectedConversation.messages.map((message, index) => {
                   const isCurrentUser = message.senderId === user?.id;
                   const showName = index === 0 || 
@@ -288,33 +285,38 @@ export default function Chat() {
                   
                   return (
                     <div key={message.id} className="w-full">
-                      <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} mb-2`}>
-                        <div className={`max-w-sm ${isCurrentUser ? "items-end" : "items-start"} flex flex-col`}>
-                          {showName && (
-                            <p className={`text-xs text-gray-500 mb-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                              {isCurrentUser ? "Du" : (message.sender.name || message.sender.email)}
-                            </p>
-                          )}
-                          <div
-                            className={`px-4 py-3 rounded-2xl ${
-                              isCurrentUser
-                                ? "bg-blue-500 text-white rounded-br-md"
-                                : "bg-gray-200 text-gray-900 rounded-bl-md"
-                            }`}
-                            style={{
-                              maxWidth: "75%",
-                              wordWrap: "break-word"
-                            }}
-                          >
-                            <p className="text-sm">{message.content}</p>
+                      {/* Show sender name for grouped messages */}
+                      {showName && !isCurrentUser && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium">
+                            {(message.sender.name || message.sender.email).charAt(0).toUpperCase()}
                           </div>
-                          <p className={`text-xs text-gray-400 mt-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
-                            {new Date(message.createdAt!).toLocaleString("da-DK", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {message.sender.name || message.sender.email}
+                          </span>
                         </div>
+                      )}
+                      
+                      <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} ${showName && !isCurrentUser ? "ml-8" : ""}`}>
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl break-words ${
+                            isCurrentUser
+                              ? "bg-blue-500 text-white rounded-br-sm"
+                              : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-sm"
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed">{message.content}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Timestamp */}
+                      <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} ${showName && !isCurrentUser ? "ml-8" : ""} mt-1`}>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(message.createdAt!).toLocaleString("da-DK", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
                     </div>
                   );
@@ -323,21 +325,26 @@ export default function Chat() {
               </div>
 
               {/* Message input */}
-              <div className="p-4 border-t border-border bg-card">
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Skriv en besked..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") {
-                        handleSendMessage();
-                      }
-                    }}
-                  />
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div className="flex space-x-3 items-end">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Skriv en besked..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="border-gray-300 dark:border-gray-600 rounded-full px-4 py-2"
+                    />
+                  </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sendMessage.isPending}
+                    className="rounded-full w-10 h-10 p-0 bg-blue-500 hover:bg-blue-600"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
