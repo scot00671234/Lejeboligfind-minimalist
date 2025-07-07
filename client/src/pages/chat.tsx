@@ -35,6 +35,13 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const { data: messages, isLoading: messagesLoading, refetch } = useQuery<ConversationMessage[]>({
+    queryKey: ["/api/messages"],
+    enabled: isAuthenticated,
+    refetchInterval: 3000, // Refetch every 3 seconds
+    refetchIntervalInBackground: true,
+  });
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
@@ -53,21 +60,33 @@ export default function Chat() {
     }
   }, [selectedConversation?.messages]);
 
-  // Poll for new messages every 3 seconds
+  // Auto-update selected conversation when messages change
   useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-    }, 3000);
+    if (selectedConversation && messages && user) {
+      // Find the updated conversation using the same logic as conversation grouping
+      const otherUserId = selectedConversation.otherUser.id;
+      const userIds = [user.id, otherUserId].sort((a, b) => a - b);
+      const conversationKey = `${selectedConversation.propertyId}-${userIds[0]}-${userIds[1]}`;
+      
+      // Filter messages for this specific conversation
+      const conversationMessages = messages.filter(message => {
+        const messageOtherUserId = message.senderId === user.id ? message.receiverId : message.senderId;
+        const messageUserIds = [user.id, messageOtherUserId].sort((a, b) => a - b);
+        const messageKey = `${message.propertyId}-${messageUserIds[0]}-${messageUserIds[1]}`;
+        return messageKey === conversationKey;
+      });
 
-    return () => clearInterval(interval);
-  }, [isAuthenticated, queryClient]);
-
-  const { data: messages, isLoading: messagesLoading } = useQuery<ConversationMessage[]>({
-    queryKey: ["/api/messages"],
-    enabled: isAuthenticated,
-  });
+      // Update selected conversation with latest messages
+      if (conversationMessages.length > 0) {
+        setSelectedConversation(prev => prev ? {
+          ...prev,
+          messages: conversationMessages.sort((a, b) => 
+            new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+          )
+        } : null);
+      }
+    }
+  }, [messages, selectedConversation?.propertyId, selectedConversation?.otherUser.id, user?.id]);
 
   const sendMessage = useMutation({
     mutationFn: async (data: { content: string; propertyId: number; receiverId: number }) => {
@@ -81,9 +100,8 @@ export default function Chat() {
     },
     onSuccess: () => {
       setNewMessage("");
-      // Refetch messages immediately to show new message
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      queryClient.refetchQueries({ queryKey: ["/api/messages"] });
+      // Force immediate refetch to show new message
+      refetch();
     },
     onError: (error: Error) => {
       toast({
