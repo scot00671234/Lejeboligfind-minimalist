@@ -31,7 +31,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
     }
   };
 
-  const getAreaFromAddress = (address: string) => {
+  const getAreaFromAddress = (address: string | null | undefined) => {
+    if (!address) {
+      return 'Ikke angivet'; // "Not specified" in Danish
+    }
     // Extract area/district from address, removing specific street details
     const parts = address.split(',');
     if (parts.length >= 2) {
