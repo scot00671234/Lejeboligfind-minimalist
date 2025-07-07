@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcrypt";
+import multer from "multer";
 import { storage } from "./storage";
 import {
   insertUserSchema,
@@ -53,6 +54,21 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure multer for file uploads (memory storage for small images)
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed'));
+      }
+    },
+  });
+
   // Session middleware
   app.use(getSession());
 
@@ -230,17 +246,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image upload route
-  app.post("/api/upload", requireAuth, async (req: any, res: any) => {
+  app.post("/api/upload", requireAuth, upload.single('image'), async (req: any, res: any) => {
     try {
-      const { image } = req.body;
-      
-      if (!image) {
+      if (!req.file) {
         return res.status(400).json({ message: "No image provided" });
       }
       
-      // For now, we'll just return the base64 image as the URL
-      // In a real app, you would upload to a cloud storage service
-      res.json({ imageUrl: image });
+      // Convert image buffer to base64 data URL
+      const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      
+      // In a real app, you would upload to a cloud storage service like AWS S3, Cloudinary, etc.
+      // For this demo, we'll return the base64 data URL
+      res.json({ imageUrl: base64Image });
     } catch (error) {
       console.error("Image upload error:", error);
       res.status(500).json({ message: "Failed to upload image" });
