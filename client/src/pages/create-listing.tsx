@@ -14,11 +14,9 @@ import { insertPropertySchema } from "@shared/schema";
 import type { InsertProperty } from "@shared/schema";
 import { useLocation, useParams } from "wouter";
 import { useEffect, useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, MapPin, Home, DollarSign, Ruler, Camera } from "lucide-react";
 
 export default function CreateListing() {
-  const { id } = useParams();
-  const isEditing = !!id;
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,11 +25,7 @@ export default function CreateListing() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
-  // Load existing property data for editing
-  const { data: existingProperty, isLoading: loadingProperty } = useQuery({
-    queryKey: ['/api/properties', id],
-    enabled: isEditing && !!id,
-  }) as { data: any, isLoading: boolean };
+
 
   const form = useForm<InsertProperty>({
     resolver: zodResolver(insertPropertySchema),
@@ -59,40 +53,19 @@ export default function CreateListing() {
     }
   }, [isAuthenticated, isLoading, navigate, toast]);
 
-  // Update form with existing property data for editing
-  useEffect(() => {
-    if (existingProperty && isEditing) {
-      form.reset({
-        title: existingProperty.title,
-        description: existingProperty.description,
-        address: existingProperty.address,
-        price: existingProperty.price,
-        rooms: existingProperty.rooms,
-        size: existingProperty.size,
-        type: existingProperty.type,
-        available: existingProperty.available,
-      });
-      if (existingProperty.imageUrls) {
-        setImageUrls(existingProperty.imageUrls);
-      }
-    }
-  }, [existingProperty, isEditing, form]);
-
   const createProperty = useMutation({
     mutationFn: async (data: InsertProperty) => {
-      const url = isEditing ? `/api/properties/${id}` : "/api/properties";
-      const method = isEditing ? "PATCH" : "POST";
-      const response = await apiRequest(method, url, data);
+      const response = await apiRequest("POST", "/api/properties", data);
       return response.json();
     },
-    onSuccess: (property) => {
+    onSuccess: (newProperty) => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-properties"] });
       toast({
-        title: isEditing ? "Bolig opdateret" : "Bolig oprettet",
-        description: isEditing ? "Dine ændringer er gemt" : "Din bolig er nu tilgængelig for lejere",
+        title: "Bolig oprettet",
+        description: "Din bolig er nu tilgængelig for lejere",
       });
-      navigate(`/bolig/${property.id}`);
+      navigate(`/bolig/${newProperty.id}`);
     },
     onError: (error: Error) => {
       toast({
@@ -104,72 +77,50 @@ export default function CreateListing() {
   });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      console.log("Starting file upload process for", e.target.files.length, "files");
-      setSelectedFiles(e.target.files);
-      
-      // Upload files to server and get URLs
-      const uploadedUrls: string[] = [];
-      
-      for (const file of Array.from(e.target.files)) {
-        try {
-          console.log("Processing file:", file.name);
-          // Convert file to base64
-          const reader = new FileReader();
-          const base64Promise = new Promise<string>((resolve, reject) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-          });
-          reader.readAsDataURL(file);
-          const base64 = await base64Promise;
-          
-          // Upload to server
-          console.log("Uploading file to server...");
-          const response = await apiRequest("POST", "/api/upload", { image: base64 });
-          const result = await response.json();
-          console.log("Upload successful, received URL:", result.imageUrl);
-          uploadedUrls.push(result.imageUrl);
-        } catch (error) {
-          console.error('Error uploading file:', error);
-          toast({
-            title: "Fejl ved upload",
-            description: "Kunne ikke uploade billede",
-            variant: "destructive",
-          });
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newUrls: string[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          newUrls.push(data.imageUrl);
         }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          title: "Fejl",
+          description: "Kunne ikke uploade billede",
+          variant: "destructive",
+        });
       }
-      
-      console.log("All uploads complete. Adding URLs to state:", uploadedUrls);
-      setImageUrls(prev => {
-        const newUrls = [...prev, ...uploadedUrls];
-        console.log("Updated imageUrls state:", newUrls);
-        return newUrls;
-      });
     }
+
+    setImageUrls(prev => [...prev, ...newUrls]);
+    setSelectedFiles(files);
   };
 
   const removeImageUrl = (url: string) => {
     setImageUrls(imageUrls.filter(u => u !== url));
   };
 
-  const onSubmit = async (data: InsertProperty) => {
-    console.log("Form submission debug:", {
-      imageUrlsState: imageUrls,
-      imageUrlsLength: imageUrls.length,
-      firstImageUrl: imageUrls[0],
-      formData: data
-    });
-    
-    // Ensure we have the latest image URLs
-    const currentImageUrls = [...imageUrls];
-    
+  const onSubmit = (data: InsertProperty) => {
     const propertyData: InsertProperty = {
       ...data,
-      imageUrl: currentImageUrls.length > 0 ? currentImageUrls[0] : undefined,
-      imageUrls: currentImageUrls.length > 0 ? currentImageUrls : undefined,
+      imageUrl: imageUrls.length > 0 ? imageUrls[0] : undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
     };
-    
-    console.log("Property data being sent:", propertyData);
     createProperty.mutate(propertyData);
   };
 
@@ -196,11 +147,11 @@ export default function CreateListing() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card>
           <CardHeader>
-            <CardTitle>{isEditing ? 'Rediger bolig' : 'Opret boligopslag'}</CardTitle>
+            <CardTitle>Opret boligopslag</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                   control={form.control}
                   name="title"
