@@ -133,12 +133,23 @@ export default function Chat() {
   // Group messages by conversation
   const conversations: ConversationGroup[] = [];
   
-  if (messages) {
-    const groupedMessages = messages.reduce((acc, message) => {
+  if (messages && user) {
+    // First, filter out invalid messages (where sender = receiver)
+    const validMessages = messages.filter(message => 
+      message.senderId !== message.receiverId
+    );
+
+    const groupedMessages = validMessages.reduce((acc, message) => {
+      // Determine the other user in the conversation
+      const otherUserId = message.senderId === user.id ? message.receiverId : message.senderId;
+      
+      // Skip if this user is talking to themselves (shouldn't happen with filter above)
+      if (otherUserId === user.id) return acc;
+      
       // Create a consistent key by sorting user IDs to ensure same conversation regardless of who sends
-      const otherUserId = message.senderId === user?.id ? message.receiverId : message.senderId;
-      const userIds = [user!.id, otherUserId].sort((a, b) => a - b);
+      const userIds = [user.id, otherUserId].sort((a, b) => a - b);
       const key = `${message.propertyId}-${userIds[0]}-${userIds[1]}`;
+      
       if (!acc[key]) {
         acc[key] = [];
       }
@@ -148,20 +159,25 @@ export default function Chat() {
 
     Object.values(groupedMessages).forEach(messageGroup => {
       if (messageGroup.length > 0) {
-        const firstMessage = messageGroup[0];
-        const lastMessage = messageGroup[messageGroup.length - 1];
-        const otherUser = firstMessage.senderId === user?.id ? firstMessage.receiver : firstMessage.sender;
-        const unreadCount = messageGroup.filter(m => 
-          m.receiverId === user?.id && !m.read
+        const sortedMessages = messageGroup.sort((a, b) => 
+          new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+        );
+        
+        const firstMessage = sortedMessages[0];
+        const lastMessage = sortedMessages[sortedMessages.length - 1];
+        
+        // Determine the other user from the first message
+        const otherUser = firstMessage.senderId === user.id ? firstMessage.receiver : firstMessage.sender;
+        
+        const unreadCount = sortedMessages.filter(m => 
+          m.receiverId === user.id && !m.read
         ).length;
 
         conversations.push({
           propertyId: firstMessage.propertyId,
           propertyTitle: firstMessage.property.title,
           otherUser,
-          messages: messageGroup.sort((a, b) => 
-            new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
-          ),
+          messages: sortedMessages,
           lastMessage,
           unreadCount,
         });
