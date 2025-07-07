@@ -99,18 +99,21 @@ export default function Chat() {
         receiverId: data.receiverId,
         senderId: user!.id,
       };
+      console.log("Sending message:", messageData);
       const response = await apiRequest("POST", "/api/messages", messageData);
       return response;
     },
     onSuccess: async () => {
       setNewMessage("");
-      // Clear cache and force immediate refresh
-      queryClient.setQueryData(["/api/messages"], undefined);
-      queryClient.removeQueries({ queryKey: ["/api/messages"] });
-      // Immediate refetch without waiting
-      refetch();
+      console.log("Message sent successfully, refreshing data...");
+      // Force complete cache refresh
+      queryClient.clear();
+      setTimeout(() => {
+        refetch();
+      }, 100);
     },
     onError: (error: Error) => {
+      console.error("Message send error:", error);
       toast({
         title: "Fejl",
         description: error.message,
@@ -194,7 +197,13 @@ export default function Chat() {
   );
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && selectedConversation) {
+    if (newMessage.trim() && selectedConversation && user) {
+      console.log("Sending message:", {
+        content: newMessage.trim(),
+        propertyId: selectedConversation.propertyId,
+        receiverId: selectedConversation.otherUser.id,
+        senderId: user.id,
+      });
       sendMessage.mutate({
         content: newMessage.trim(),
         propertyId: selectedConversation.propertyId,
@@ -306,6 +315,9 @@ export default function Chat() {
                           }`}
                         >
                           <p className="text-sm leading-relaxed">{message.content}</p>
+                          <p className="text-xs mt-1 opacity-75">
+                            {isCurrentUser ? "You" : (message.sender?.name || message.sender?.email)}
+                          </p>
                         </div>
                       </div>
                       
