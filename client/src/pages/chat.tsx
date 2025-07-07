@@ -38,8 +38,9 @@ export default function Chat() {
   const { data: messages, isLoading: messagesLoading, refetch } = useQuery<ConversationMessage[]>({
     queryKey: ["/api/messages"],
     enabled: isAuthenticated,
-    refetchInterval: 3000, // Refetch every 3 seconds
+    refetchInterval: 2000, // Refetch every 2 seconds
     refetchIntervalInBackground: true,
+    staleTime: 0, // Always consider data stale for fresh fetches
   });
 
   useEffect(() => {
@@ -96,9 +97,11 @@ export default function Chat() {
       };
       await apiRequest("POST", "/api/messages", messageData);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setNewMessage("");
       // Force immediate refetch to show new message
+      await queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      // Force a fresh refetch
       refetch();
     },
     onError: (error: Error) => {
@@ -285,8 +288,8 @@ export default function Chat() {
                         <div
                           className={`px-4 py-2 rounded-lg ${
                             isCurrentUser
-                              ? "bg-primary text-primary-foreground rounded-br-sm"
-                              : "bg-muted rounded-bl-sm"
+                              ? "bg-blue-500 text-white rounded-br-sm"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
                           }`}
                         >
                           <p className="text-sm">{message.content}</p>
