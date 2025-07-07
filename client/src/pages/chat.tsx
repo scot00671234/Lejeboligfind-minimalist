@@ -35,16 +35,34 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Force fresh queries by adding timestamp and user ID
+  const queryKey = [`/api/messages?t=${Date.now()}`, user?.id];
+  
   const { data: messages, isLoading: messagesLoading, refetch } = useQuery<ConversationMessage[]>({
-    queryKey: ["/api/messages"],
-    enabled: isAuthenticated,
-    refetchInterval: 500,
+    queryKey,
+    enabled: isAuthenticated && !!user,
+    refetchInterval: 2000,
     refetchIntervalInBackground: true,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
+    networkMode: 'always',
+    queryFn: async () => {
+      // Force fresh request with cache-busting
+      const response = await fetch(`/api/messages?nocache=${Date.now()}`, {
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+      return response.json();
+    }
   });
 
   useEffect(() => {
@@ -106,16 +124,8 @@ export default function Chat() {
     onSuccess: async () => {
       setNewMessage("");
       console.log("Message sent successfully, force refreshing...");
-      // Clear all cache and force immediate refresh
-      queryClient.clear();
-      // Force multiple refetches to ensure data updates
-      await refetch();
-      setTimeout(async () => {
-        await refetch();
-      }, 100);
-      setTimeout(async () => {
-        await refetch();
-      }, 500);
+      // Force page reload to bypass all caching issues
+      window.location.reload();
     },
     onError: (error: Error) => {
       console.error("Message send error:", error);
@@ -294,12 +304,13 @@ export default function Chat() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
                 {selectedConversation.messages.map((message, index) => {
                   const isCurrentUser = message.senderId === user?.id;
-                  console.log("Message debug:", {
+                  // Debug positioning logic
+                  console.log("User positioning:", {
                     messageId: message.id,
                     senderId: message.senderId,
-                    currentUserId: user?.id,
+                    currentUser: user,
                     isCurrentUser: isCurrentUser,
-                    content: message.content.substring(0, 20)
+                    senderName: message.sender?.name || message.sender?.email
                   });
                   const showName = index === 0 || 
                     selectedConversation.messages[index - 1].senderId !== message.senderId;
