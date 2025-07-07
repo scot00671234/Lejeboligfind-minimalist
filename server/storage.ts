@@ -35,6 +35,7 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   getPropertyMessages(propertyId: number, userId: number): Promise<Message[]>;
   getAllUserMessages(userId: number): Promise<any[]>;
+  getConversationMessages(propertyId: number, userId: number, otherUserId: number, page?: number, limit?: number): Promise<Message[]>;
   markMessageAsRead(messageId: number, userId: number): Promise<void>;
 }
 
@@ -238,6 +239,26 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(messages.createdAt);
+  }
+
+  async getConversationMessages(propertyId: number, userId: number, otherUserId: number, page = 1, limit = 50): Promise<Message[]> {
+    const offset = (page - 1) * limit;
+    
+    return await db
+      .select()
+      .from(messages)
+      .where(
+        and(
+          eq(messages.propertyId, propertyId),
+          or(
+            and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
+            and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
+          )
+        )
+      )
+      .orderBy(desc(messages.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
   async markMessageAsRead(messageId: number, userId: number): Promise<void> {

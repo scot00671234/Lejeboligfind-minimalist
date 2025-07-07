@@ -344,6 +344,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Paginated conversation messages
+  app.get("/api/conversations/:propertyId/:otherUserId", requireAuth, async (req: any, res: any) => {
+    try {
+      const propertyId = parseInt(req.params.propertyId);
+      const otherUserId = parseInt(req.params.otherUserId);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      
+      const messages = await storage.getConversationMessages(
+        propertyId, 
+        req.session.userId, 
+        otherUserId, 
+        page, 
+        limit
+      );
+      
+      res.json({
+        messages: messages.reverse(), // Reverse to show oldest first
+        page,
+        limit,
+        hasMore: messages.length === limit
+      });
+    } catch (error) {
+      console.error("Get conversation messages error:", error);
+      res.status(500).json({ message: "Failed to get conversation messages" });
+    }
+  });
+
   app.put("/api/messages/:id/read", requireAuth, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
