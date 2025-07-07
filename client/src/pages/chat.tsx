@@ -128,7 +128,7 @@ export default function Chat() {
     return null;
   }
 
-  // Group messages by conversation
+  // Group messages by conversation - simplified approach
   const conversations: ConversationGroup[] = [];
   
   if (messages && user) {
@@ -137,59 +137,44 @@ export default function Chat() {
       message.senderId !== message.receiverId
     );
 
-    // Group messages by property and create unified conversations
-    const propertyGroups = validMessages.reduce((acc, message) => {
-      const propertyId = message.propertyId;
-      if (!acc[propertyId]) {
-        acc[propertyId] = [];
+    // Create a map to track unique conversations
+    const conversationMap = new Map<string, ConversationMessage[]>();
+    
+    validMessages.forEach(message => {
+      // Create a consistent conversation key regardless of who sent/received
+      const participants = [message.senderId, message.receiverId].sort();
+      const conversationKey = `${message.propertyId}-${participants[0]}-${participants[1]}`;
+      
+      if (!conversationMap.has(conversationKey)) {
+        conversationMap.set(conversationKey, []);
       }
-      acc[propertyId].push(message);
-      return acc;
-    }, {} as Record<number, ConversationMessage[]>);
+      conversationMap.get(conversationKey)!.push(message);
+    });
 
-    // For each property, create a single conversation with all participants
-    Object.entries(propertyGroups).forEach(([propertyId, propertyMessages]) => {
-      if (propertyMessages.length === 0) return;
+    // Convert map to conversations array
+    conversationMap.forEach((conversationMessages, key) => {
+      const sortedMessages = conversationMessages.sort((a, b) => 
+        new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+      );
+      
+      const firstMessage = sortedMessages[0];
+      const lastMessage = sortedMessages[sortedMessages.length - 1];
+      
+      // Find the other user (not the current user)
+      const otherUserId = firstMessage.senderId === user.id ? firstMessage.receiverId : firstMessage.senderId;
+      const otherUser = firstMessage.senderId === user.id ? firstMessage.receiver : firstMessage.sender;
+      
+      const unreadCount = sortedMessages.filter(m => 
+        m.receiverId === user.id && !m.read
+      ).length;
 
-      // Get all unique users involved in this property conversation (excluding current user)
-      const allUserIds = new Set<number>();
-      propertyMessages.forEach(message => {
-        if (message.senderId !== user.id) allUserIds.add(message.senderId);
-        if (message.receiverId !== user.id) allUserIds.add(message.receiverId);
-      });
-
-      // For each other user, create a conversation
-      allUserIds.forEach(otherUserId => {
-        // Get messages between current user and this other user for this property
-        const conversationMessages = propertyMessages.filter(message =>
-          (message.senderId === user.id && message.receiverId === otherUserId) ||
-          (message.senderId === otherUserId && message.receiverId === user.id)
-        );
-
-        if (conversationMessages.length > 0) {
-          const sortedMessages = conversationMessages.sort((a, b) => 
-            new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
-          );
-          
-          const firstMessage = sortedMessages[0];
-          const lastMessage = sortedMessages[sortedMessages.length - 1];
-          
-          // Find the other user object
-          const otherUser = firstMessage.senderId === otherUserId ? firstMessage.sender : firstMessage.receiver;
-          
-          const unreadCount = sortedMessages.filter(m => 
-            m.receiverId === user.id && !m.read
-          ).length;
-
-          conversations.push({
-            propertyId: parseInt(propertyId),
-            propertyTitle: firstMessage.property.title,
-            otherUser,
-            messages: sortedMessages,
-            lastMessage,
-            unreadCount,
-          });
-        }
+      conversations.push({
+        propertyId: firstMessage.propertyId,
+        propertyTitle: firstMessage.property.title,
+        otherUser,
+        messages: sortedMessages,
+        lastMessage,
+        unreadCount,
       });
     });
   }

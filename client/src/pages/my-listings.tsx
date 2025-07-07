@@ -30,8 +30,9 @@ export default function MyListings() {
   }, [isAuthenticated, isLoading, navigate, toast]);
 
   const { data: properties, isLoading: propertiesLoading } = useQuery<Property[]>({
-    queryKey: ["/api/my-properties"],
+    queryKey: ["/api/my-properties", user?.id],
     enabled: isAuthenticated,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const deleteProperty = useMutation({
