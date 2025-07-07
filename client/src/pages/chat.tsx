@@ -38,9 +38,10 @@ export default function Chat() {
   const { data: messages, isLoading: messagesLoading, refetch } = useQuery<ConversationMessage[]>({
     queryKey: ["/api/messages"],
     enabled: isAuthenticated,
-    refetchInterval: 2000, // Refetch every 2 seconds
+    refetchInterval: 1000, // Refetch every 1 second for faster updates
     refetchIntervalInBackground: true,
     staleTime: 0, // Always consider data stale for fresh fetches
+    cacheTime: 0, // Don't cache data
   });
 
   useEffect(() => {
@@ -95,14 +96,18 @@ export default function Chat() {
         receiverId: data.receiverId,
         senderId: user!.id,
       };
-      await apiRequest("POST", "/api/messages", messageData);
+      const response = await apiRequest("POST", "/api/messages", messageData);
+      return response;
     },
     onSuccess: async () => {
       setNewMessage("");
-      // Force immediate refetch to show new message
-      await queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      // Force a fresh refetch
-      refetch();
+      // Force immediate cache invalidation and refetch
+      queryClient.removeQueries({ queryKey: ["/api/messages"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/messages"] });
+      // Also update selected conversation immediately if it exists
+      if (selectedConversation) {
+        await refetch();
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -278,7 +283,7 @@ export default function Chat() {
                     selectedConversation.messages[index - 1].senderId !== message.senderId;
                   
                   return (
-                    <div key={message.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                    <div key={message.id} className={`w-full ${isCurrentUser ? "flex justify-end" : "flex justify-start"}`}>
                       <div className={`max-w-xs ${isCurrentUser ? "items-end" : "items-start"} flex flex-col`}>
                         {showName && (
                           <p className={`text-xs text-muted-foreground mb-1 px-1 ${isCurrentUser ? "text-right" : "text-left"}`}>
@@ -286,10 +291,10 @@ export default function Chat() {
                           </p>
                         )}
                         <div
-                          className={`px-4 py-2 rounded-lg ${
+                          className={`px-4 py-2 rounded-lg max-w-xs ${
                             isCurrentUser
-                              ? "bg-blue-500 text-white rounded-br-sm"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
+                              ? "bg-blue-500 text-white rounded-br-sm ml-auto"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-sm mr-auto"
                           }`}
                         >
                           <p className="text-sm">{message.content}</p>
