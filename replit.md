@@ -149,6 +149,12 @@ Lejebolig Find is a Danish rental property platform that connects property owner
   - Enhanced loading states with professional spinner design
   - Added structured form sections with clear visual hierarchy
   - Maintained distinct functionality while achieving visual consistency
+- July 07, 2025. Fixed messaging system conversation grouping:
+  - Fixed issue where replies created new chat threads instead of continuing existing conversations
+  - Improved conversation grouping logic to use consistent keys regardless of sender/receiver roles
+  - Enhanced message display with sender names and proper Facebook Messenger-style layout
+  - Added visual indicators for message senders and improved timestamp formatting
+  - Messages now properly thread in single conversations between users for each property
 
 ## User Preferences
 
