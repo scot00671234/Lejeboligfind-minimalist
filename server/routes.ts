@@ -278,7 +278,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/my-properties", requireAuth, async (req: any, res: any) => {
     try {
+      console.log("Getting properties for user ID:", req.session.userId);
       const properties = await storage.getUserProperties(req.session.userId);
+      console.log("Found properties:", properties.length, "for user", req.session.userId);
       res.json(properties);
     } catch (error) {
       console.error("Get user properties error:", error);
