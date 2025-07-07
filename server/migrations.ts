@@ -84,7 +84,7 @@ export async function runMigrations() {
 
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "sessions" (
-        "id" varchar(128) PRIMARY KEY NOT NULL,
+        "sid" varchar(128) PRIMARY KEY NOT NULL,
         "sess" json NOT NULL,
         "expire" timestamp(6) NOT NULL
       );
