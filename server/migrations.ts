@@ -23,18 +23,51 @@ export async function runMigrations() {
         "id" serial PRIMARY KEY NOT NULL,
         "title" varchar(255) NOT NULL,
         "description" text NOT NULL,
+        "address" varchar(500) NOT NULL,
         "price" integer NOT NULL,
-        "location" varchar(255) NOT NULL,
-        "type" varchar(100) NOT NULL,
-        "bedrooms" integer NOT NULL,
-        "bathrooms" integer NOT NULL,
         "size" integer NOT NULL,
-        "images" text[] DEFAULT ARRAY[]::text[] NOT NULL,
+        "rooms" integer NOT NULL,
+        "type" varchar(50) NOT NULL,
+        "image_url" varchar(500),
+        "image_urls" text[],
         "available" boolean DEFAULT true NOT NULL,
         "user_id" integer NOT NULL,
         "created_at" timestamp DEFAULT now() NOT NULL,
         "updated_at" timestamp DEFAULT now() NOT NULL
       );
+    `);
+    
+    // Add missing columns if they don't exist (for existing databases)
+    await db.execute(sql`
+      DO $$ BEGIN
+        ALTER TABLE "properties" ADD COLUMN "image_url" varchar(500);
+      EXCEPTION
+        WHEN duplicate_column THEN null;
+      END $$;
+    `);
+
+    await db.execute(sql`
+      DO $$ BEGIN
+        ALTER TABLE "properties" ADD COLUMN "image_urls" text[];
+      EXCEPTION
+        WHEN duplicate_column THEN null;
+      END $$;
+    `);
+
+    await db.execute(sql`
+      DO $$ BEGIN
+        ALTER TABLE "properties" ADD COLUMN "address" varchar(500);
+      EXCEPTION
+        WHEN duplicate_column THEN null;
+      END $$;
+    `);
+
+    await db.execute(sql`
+      DO $$ BEGIN
+        ALTER TABLE "properties" ADD COLUMN "rooms" integer;
+      EXCEPTION
+        WHEN duplicate_column THEN null;
+      END $$;
     `);
 
     await db.execute(sql`
