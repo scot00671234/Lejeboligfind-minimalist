@@ -28,7 +28,7 @@ export async function runMigrations() {
         "size" integer NOT NULL,
         "rooms" integer NOT NULL,
         "type" varchar(50) NOT NULL,
-        "image_url" varchar(500),
+        "image_url" text,
         "image_urls" text[],
         "available" boolean DEFAULT true NOT NULL,
         "user_id" integer NOT NULL,
@@ -40,7 +40,7 @@ export async function runMigrations() {
     // Add missing columns if they don't exist (for existing databases)
     await db.execute(sql`
       DO $$ BEGIN
-        ALTER TABLE "properties" ADD COLUMN "image_url" varchar(500);
+        ALTER TABLE "properties" ADD COLUMN "image_url" text;
       EXCEPTION
         WHEN duplicate_column THEN null;
       END $$;

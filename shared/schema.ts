@@ -34,7 +34,7 @@ export const properties = pgTable("properties", {
   size: integer("size").notNull(), // Size in square meters
   rooms: integer("rooms").notNull(),
   type: varchar("type", { length: 50 }).notNull(), // apartment, house, room
-  imageUrl: varchar("image_url", { length: 500 }),
+  imageUrl: text("image_url"),
   imageUrls: text("image_urls").array(),
   available: boolean("available").default(true),
   userId: integer("user_id").references(() => users.id).notNull(),
