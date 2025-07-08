@@ -72,10 +72,19 @@ export default function Chat() {
       
       const validConversations = response.filter((conv, index) => {
         console.log(`Conversation ${index}:`, conv);
-        const isValid = conv && 
-          conv.propertyTitle && conv.propertyTitle.trim() !== '' && 
-          conv.otherUserName && conv.otherUserName.trim() !== '' &&
-          conv.otherUserId !== user?.id;
+        console.log(`User ID: ${user?.id}, Other User ID: ${conv?.otherUserId}`);
+        console.log(`Property Title: "${conv?.propertyTitle}"`);
+        console.log(`Other User Name: "${conv?.otherUserName}"`);
+        
+        const hasValidProperty = conv && conv.propertyTitle && conv.propertyTitle.trim() !== '';
+        const hasValidOtherUser = conv && conv.otherUserName && conv.otherUserName.trim() !== '';
+        const isNotSelfConversation = conv && conv.otherUserId !== user?.id;
+        
+        console.log(`Valid property: ${hasValidProperty}`);
+        console.log(`Valid other user: ${hasValidOtherUser}`);
+        console.log(`Not self: ${isNotSelfConversation}`);
+        
+        const isValid = hasValidProperty && hasValidOtherUser && isNotSelfConversation;
         console.log(`Conversation ${index} valid:`, isValid);
         return isValid;
       });
