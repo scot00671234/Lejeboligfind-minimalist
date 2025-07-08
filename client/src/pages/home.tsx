@@ -18,11 +18,15 @@ export default function Home() {
       const params = new URLSearchParams();
       if (search.query) params.append("query", search.query);
       if (search.type) params.append("type", search.type);
-      if (search.minPrice) params.append("minPrice", search.minPrice.toString());
-      if (search.maxPrice) params.append("maxPrice", search.maxPrice.toString());
-      if (search.minRooms) params.append("minRooms", search.minRooms.toString());
-      if (search.maxRooms) params.append("maxRooms", search.maxRooms.toString());
-      
+      if (search.minPrice)
+        params.append("minPrice", search.minPrice.toString());
+      if (search.maxPrice)
+        params.append("maxPrice", search.maxPrice.toString());
+      if (search.minRooms)
+        params.append("minRooms", search.minRooms.toString());
+      if (search.maxRooms)
+        params.append("maxRooms", search.maxRooms.toString());
+
       const response = await fetch(`/api/properties?${params}`);
       if (!response.ok) throw new Error("Failed to fetch properties");
       return response.json();
@@ -46,7 +50,7 @@ export default function Home() {
               Søg lejeboliger i hele Danmark
             </p>
           </div>
-          
+
           <div className="max-w-4xl mx-auto">
             <SearchBar onSearch={handleSearch} />
           </div>
@@ -57,14 +61,11 @@ export default function Home() {
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-light text-foreground">Aktuelle boliger</h2>
-            {isAuthenticated && (
-              <Link href="/opret-bolig">
-                <Button>Opret boligopslag</Button>
-              </Link>
-            )}
+            <h2 className="text-2xl font-light text-foreground">
+              Aktuelle boliger
+            </h2>
           </div>
-          
+
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
