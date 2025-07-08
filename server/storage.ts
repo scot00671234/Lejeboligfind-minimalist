@@ -244,10 +244,40 @@ export class DatabaseStorage implements IStorage {
 
   async getConversationMessages(propertyId: number, userId: number, otherUserId: number, page = 1, limit = 50): Promise<Message[]> {
     const offset = (page - 1) * limit;
+    const senderUsers = alias(users, "senderUsers");
+    const receiverUsers = alias(users, "receiverUsers");
     
     return await db
-      .select()
+      .select({
+        id: messages.id,
+        content: messages.content,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        propertyId: messages.propertyId,
+        createdAt: messages.createdAt,
+        read: messages.read,
+        sender: {
+          id: senderUsers.id,
+          name: senderUsers.name,
+          email: senderUsers.email,
+        },
+        receiver: {
+          id: receiverUsers.id,
+          name: receiverUsers.name,
+          email: receiverUsers.email,
+        },
+        property: {
+          id: properties.id,
+          title: properties.title,
+          address: properties.address,
+          price: properties.price,
+          type: properties.type,
+        },
+      })
       .from(messages)
+      .innerJoin(properties, eq(messages.propertyId, properties.id))
+      .innerJoin(senderUsers, eq(messages.senderId, senderUsers.id))
+      .innerJoin(receiverUsers, eq(messages.receiverId, receiverUsers.id))
       .where(
         and(
           eq(messages.propertyId, propertyId),

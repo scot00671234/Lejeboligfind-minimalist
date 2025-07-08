@@ -360,8 +360,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // New conversations endpoint
-  app.get("/api/conversations", requireAuth, async (req: any, res: any) => {
+  // Messages endpoints as specified
+  app.get("/api/messages/conversations", requireAuth, async (req: any, res: any) => {
     try {
       const conversations = await storage.getUserConversations(req.session.userId);
       res.json(conversations);
@@ -371,31 +371,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Paginated conversation messages
-  app.get("/api/conversations/:propertyId/:otherUserId", requireAuth, async (req: any, res: any) => {
+  app.get("/api/messages/:conversationId", requireAuth, async (req: any, res: any) => {
     try {
-      const propertyId = parseInt(req.params.propertyId);
-      const otherUserId = parseInt(req.params.otherUserId);
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 50;
+      const { conversationId } = req.params;
+      // Parse conversationId format: "propertyId-userId1-userId2" 
+      const parts = conversationId.split('-');
+      if (parts.length !== 3) {
+        return res.status(400).json({ message: 'Invalid conversation ID format' });
+      }
+
+      const [propertyId, userId1, userId2] = parts.map(Number);
+      const currentUserId = req.session.userId;
       
-      const messages = await storage.getConversationMessages(
-        propertyId, 
-        req.session.userId, 
-        otherUserId, 
-        page, 
-        limit
-      );
+      // Determine the other user ID
+      const otherUserId = userId1 === currentUserId ? userId2 : userId1;
       
-      res.json({
-        messages: messages.reverse(), // Reverse to show oldest first
-        page,
-        limit,
-        hasMore: messages.length === limit
-      });
+      const messages = await storage.getConversationMessages(propertyId, currentUserId, otherUserId);
+      res.json(messages.reverse()); // Return oldest first for proper display order
     } catch (error) {
-      console.error("Get conversation messages error:", error);
-      res.status(500).json({ message: "Failed to get conversation messages" });
+      console.error('Error fetching conversation messages:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 

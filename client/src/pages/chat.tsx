@@ -57,11 +57,11 @@ export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch conversations
+  // Fetch conversations - using exact endpoint as specified
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery<Conversation[]>({
-    queryKey: ['conversations', user?.id],
+    queryKey: ['messages', 'conversations', user?.id],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/conversations');
+      const response = await apiRequest('GET', '/api/messages/conversations');
       return Array.isArray(response) ? response : [];
     },
     enabled: isAuthenticated && !!user,
@@ -69,13 +69,13 @@ export default function Chat() {
     staleTime: 1000,
   });
 
-  // Fetch messages for selected conversation
+  // Fetch messages for selected conversation - using exact endpoint as specified
   const { data: conversationMessages = [], isLoading: messagesLoading } = useQuery<Message[]>({
-    queryKey: ['conversation-messages', selectedConversation?.propertyId, selectedConversation?.otherUserId, user?.id],
+    queryKey: ['messages', selectedConversation?.id, user?.id],
     queryFn: async () => {
       if (!selectedConversation || !user) return [];
-      const response = await apiRequest('GET', `/api/conversations/${selectedConversation.propertyId}/${selectedConversation.otherUserId}`);
-      return response?.messages || [];
+      const response = await apiRequest('GET', `/api/messages/${selectedConversation.id}`);
+      return Array.isArray(response) ? response : [];
     },
     enabled: isAuthenticated && !!user && !!selectedConversation,
     refetchInterval: 2000,
@@ -101,10 +101,10 @@ export default function Chat() {
     onSuccess: () => {
       setNewMessage("");
       // Invalidate both conversations and specific conversation messages
-      queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['messages', 'conversations', user?.id] });
       if (selectedConversation) {
         queryClient.invalidateQueries({ 
-          queryKey: ['conversation-messages', selectedConversation.propertyId, selectedConversation.otherUserId, user?.id] 
+          queryKey: ['messages', selectedConversation.id, user?.id] 
         });
       }
       toast({
