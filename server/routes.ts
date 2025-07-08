@@ -30,11 +30,13 @@ function getSession() {
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    name: "connect.sid",
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to false for development
       maxAge: sessionTtl,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
+      path: "/", // Explicitly set path
     },
   });
 }
@@ -143,12 +145,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session and save explicitly
       req.session.userId = user.id;
       
+      console.log("Login - Setting session userId:", user.id);
+      console.log("Login - Session before save:", req.session);
+      
       // Save session and send response
       req.session.save((err: any) => {
         if (err) {
           console.error("Session save error during login:", err);
           return res.status(500).json({ message: "Login failed" });
         }
+        
+        console.log("Login - Session after save:", req.session);
+        console.log("Login - Session ID:", req.sessionID);
+        
         res.json({ user: { id: user.id, email: user.email, name: user.name } });
       });
     } catch (error) {
@@ -168,16 +177,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", async (req: any, res: any) => {
     try {
+      console.log("Auth me request - Session ID:", req.sessionID);
+      console.log("Auth me request - Session data:", req.session);
+      console.log("Auth me request - Cookies:", req.headers.cookie);
+      
       // Check if session exists and has userId
       if (!req.session?.userId) {
+        console.log("No session or userId found");
         return res.status(401).json({ message: "Unauthorized" });
       }
       
       const user = await storage.getUser(req.session.userId);
       if (!user) {
+        console.log("User not found in database:", req.session.userId);
         return res.status(401).json({ message: "User not found" });
       }
       
+      console.log("User found:", { id: user.id, email: user.email, name: user.name });
       res.json({ id: user.id, email: user.email, name: user.name });
     } catch (error) {
       console.error("Get user error:", error);
