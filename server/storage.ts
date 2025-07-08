@@ -12,7 +12,7 @@ import {
   type PropertySearch,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, gte, lte, ilike, desc } from "drizzle-orm";
+import { eq, and, or, gte, lte, ilike, desc, not } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 const usersReceiver = alias(users, "usersReceiver");
