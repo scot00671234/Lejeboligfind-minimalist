@@ -34,6 +34,7 @@ function getSession() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   });
 }
@@ -105,10 +106,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword,
       });
       
-      // Set session
+      // Set session and save explicitly
       req.session.userId = user.id;
       
-      res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      // Save session and send response
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session save error during registration:", err);
+          return res.status(500).json({ message: "Registration failed" });
+        }
+        res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      });
     } catch (error) {
       console.error("Registration error:", error);
       if (error instanceof z.ZodError) {
@@ -132,10 +140,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid email or password" });
       }
       
-      // Set session
+      // Set session and save explicitly
       req.session.userId = user.id;
       
-      res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      // Save session and send response
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session save error during login:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(400).json({ message: "Invalid login data" });
@@ -151,13 +166,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/auth/me", requireAuth, async (req: any, res: any) => {
+  app.get("/api/auth/me", async (req: any, res: any) => {
     try {
+      // Check if session exists and has userId
+      if (!req.session?.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const user = await storage.getUser(req.session.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
-      res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      
+      res.json({ id: user.id, email: user.email, name: user.name });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ message: "Failed to get user" });
