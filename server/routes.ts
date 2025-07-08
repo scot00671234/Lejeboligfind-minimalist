@@ -331,6 +331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId: req.session.userId,
       });
       
+      // Prevent users from messaging themselves
+      if (data.senderId === data.receiverId) {
+        return res.status(400).json({ message: "Cannot send message to yourself" });
+      }
+      
       const message = await storage.createMessage(data);
       res.json(message);
     } catch (error) {

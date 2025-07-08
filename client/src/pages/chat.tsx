@@ -63,7 +63,6 @@ export default function Chat() {
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/messages/conversations');
       const data = await response.json();
-      console.log('CONVERSATIONS DATA:', data);
       return Array.isArray(data) ? data : [];
     },
     enabled: isAuthenticated && !!user,
@@ -82,7 +81,6 @@ export default function Chat() {
       console.log('Fetching messages for conversation:', selectedConversation.id);
       const response = await apiRequest('GET', `/api/messages/${selectedConversation.id}`);
       const data = await response.json();
-      console.log('Messages data:', data);
       return Array.isArray(data) ? data : [];
     },
     enabled: isAuthenticated && !!user && !!selectedConversation,
@@ -179,7 +177,7 @@ export default function Chat() {
               <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Ingen samtaler endnu</p>
               <p className="text-xs">Send en besked til en boligejer for at starte</p>
-              <p className="text-xs text-gray-400 mt-2">Debug: Auth={isAuthenticated}, User={user?.id}, Count={conversations.length}</p>
+
             </div>
           ) : (
             conversations.map(conversation => (

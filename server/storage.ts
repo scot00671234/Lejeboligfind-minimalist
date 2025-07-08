@@ -284,7 +284,9 @@ export class DatabaseStorage implements IStorage {
           or(
             and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
             and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
-          )
+          ),
+          // Exclude any self-messages (extra safety)
+          not(eq(messages.senderId, messages.receiverId))
         )
       )
       .orderBy(desc(messages.createdAt))
@@ -296,7 +298,7 @@ export class DatabaseStorage implements IStorage {
     const senderUsers = alias(users, "senderUsers");
     const receiverUsers = alias(users, "receiverUsers");
     
-    // Get all messages for this user with all needed data
+    // Get all messages for this user with all needed data, excluding self-messages
     const userMessages = await db
       .select({
         id: messages.id,
@@ -329,9 +331,13 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(senderUsers, eq(messages.senderId, senderUsers.id))
       .innerJoin(receiverUsers, eq(messages.receiverId, receiverUsers.id))
       .where(
-        or(
-          eq(messages.senderId, userId),
-          eq(messages.receiverId, userId)
+        and(
+          or(
+            eq(messages.senderId, userId),
+            eq(messages.receiverId, userId)
+          ),
+          // Exclude self-messages
+          not(eq(messages.senderId, messages.receiverId))
         )
       )
       .orderBy(desc(messages.createdAt));
@@ -342,6 +348,11 @@ export class DatabaseStorage implements IStorage {
     userMessages.forEach(message => {
       const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
       const otherUserName = message.senderId === userId ? message.receiver.name : message.sender.name;
+      
+      // Skip if somehow we still have a self-message
+      if (otherUserId === userId) {
+        return;
+      }
       
       // Create consistent conversation key
       const conversationKey = `${message.propertyId}-${Math.min(userId, otherUserId)}-${Math.max(userId, otherUserId)}`;
