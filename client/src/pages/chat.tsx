@@ -278,18 +278,20 @@ export default function Chat() {
                       }`}
                     >
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                           message.senderId === user?.id
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                            ? 'bg-blue-500 text-white rounded-br-md'
+                            : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-bl-md'
                         }`}
                       >
-                        <div className="text-sm font-medium mb-1">
-                          {message.senderId === user?.id ? 'Du' : message.sender.name}
-                        </div>
+                        {message.senderId !== user?.id && (
+                          <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                            {message.sender.name}
+                          </div>
+                        )}
                         <div className="text-sm">{message.content}</div>
                         <div className={`text-xs mt-1 ${
-                          message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'
+                          message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                         }`}>
                           {new Date(message.createdAt).toLocaleTimeString('da-DK', {
                             hour: '2-digit',
