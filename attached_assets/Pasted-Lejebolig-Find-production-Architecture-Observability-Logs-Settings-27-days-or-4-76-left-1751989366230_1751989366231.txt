@@ -1,0 +1,427 @@
+Lejebolig Find
+
+
+production
+Architecture
+Observability
+Logs
+Settings
+
+27 days or $4.76 left
+
+
+Share
+
+
+
+
+
+
+
+
+Activity
+
+Lejeboligfind-minimalist
+
+Deployment crashed
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment successful
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment crashed
+
+2 hours ago
+
+Lejeboligfind-minimalist
+
+Deployment restarted
+
+2 hours ago
+
+
+Fetch More
+
+Lejeboligfind-minimalist
+Deployments
+Variables
+Metrics
+Settings
+lejeboligfind-minimalist-production.up.railway.app
+22.17.0node@22.17.0
+europe-west4-drams3a
+1 Replica
+
+
+
+History
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lejeboligfind-minimalist
+/
+04d4c48
+Jul 8, 2025 3:15 PM
+
+Crashed
+
+lejeboligfind-minimalist-production.up.railway.app
+Get Help
+
+Details
+Build Logs
+Deploy Logs
+HTTP Logs
+
+Filter
+Filter logs using "", (), AND, OR, -
+
+
+
+
+Load More
+
+> rest-express@1.0.0 start
+
+> NODE_ENV=production node dist/index.js
+
+ 
+
+Starting application...
+
+Environment: production
+
+Database URL configured: true
+
+Initializing database...
+
+Running database migrations...
+
+Database URL configured: true
+
+Creating users table...
+
+Error running migrations: ErrorEvent {
+
+  [Symbol(kTarget)]: WebSocket {
+
+    _events: [Object: null prototype] {
+
+      error: [Function],
+
+      message: [Function],
+
+      close: [Function],
+
+      open: [Function]
+
+    },
+
+    _eventsCount: 4,
+
+    _maxListeners: undefined,
+
+    _binaryType: 'arraybuffer',
+
+    _closeCode: 1006,
+
+    _closeCode: 1006,
+
+    _closeFrameReceived: false,
+
+    _closeFrameReceived: false,
+
+    _closeFrameSent: false,
+
+    _closeMessage: <Buffer >,
+
+    _closeFrameSent: false,
+
+    _closeTimer: null,
+
+    _errorEmitted: true,
+
+    _closeMessage: <Buffer >,
+
+    _extensions: {},
+
+    _closeTimer: null,
+
+    _paused: false,
+
+    _errorEmitted: true,
+
+    _protocol: '',
+
+    _extensions: {},
+
+    _readyState: 3,
+
+    _receiver: null,
+
+    _paused: false,
+
+    _sender: null,
+
+    _protocol: '',
+
+    _socket: null,
+
+    _readyState: 3,
+
+    _bufferedAmount: 0,
+
+    _isServer: false,
+
+    _receiver: null,
+
+    _redirects: 0,
+
+    _sender: null,
+
+    _autoPong: true,
+
+    _url: 'wss://postgres-ll3v.railway.internal/v2',
+
+    _socket: null,
+
+    _req: null,
+
+    _bufferedAmount: 0,
+
+    [Symbol(shapeMode)]: false,
+
+    [Symbol(kCapture)]: false
+
+    _isServer: false,
+
+  },
+
+    _redirects: 0,
+
+  [Symbol(kType)]: 'error',
+
+    _autoPong: true,
+
+  [Symbol(kError)]: Error: connect ECONNREFUSED fd12:45e5:171c:0:1000:28:7191:1e4e:443
+
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+
+    errno: -111,
+
+    code: 'ECONNREFUSED',
+
+    _url: 'wss://postgres-ll3v.railway.internal/v2',
+
+    syscall: 'connect',
+
+    address: 'fd12:45e5:171c:0:1000:28:7191:1e4e',
+
+    _req: null,
+
+    port: 443
+
+    [Symbol(shapeMode)]: false,
+
+  },
+
+  [Symbol(kMessage)]: 'connect ECONNREFUSED fd12:45e5:171c:0:1000:28:7191:1e4e:443'
+
+    [Symbol(kCapture)]: false
+
+}
+
+  },
+
+This is a critical error - the application cannot start without database access
+
+  [Symbol(kType)]: 'error',
+
+❌ CRITICAL ERROR: Failed to start application
+
+  [Symbol(kError)]: Error: connect ECONNREFUSED fd12:45e5:171c:0:1000:28:7191:1e4e:443
+
+Error details: ErrorEvent {
+
+  [Symbol(kTarget)]: WebSocket {
+
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+
+    _events: [Object: null prototype] {
+
+    errno: -111,
+
+      error: [Function],
+
+      message: [Function],
+
+    code: 'ECONNREFUSED',
+
+      close: [Function],
+
+    syscall: 'connect',
+
+      open: [Function]
+
+    address: 'fd12:45e5:171c:0:1000:28:7191:1e4e',
+
+    },
+
+    _eventsCount: 4,
+
+    port: 443
+
+    _maxListeners: undefined,
+
+  },
+
+    _binaryType: 'arraybuffer',
+
+  [Symbol(kMessage)]: 'connect ECONNREFUSED fd12:45e5:171c:0:1000:28:7191:1e4e:443'
+
+}
+
+This is likely a database connection issue. Check your DATABASE_URL environment variable.
+
+
+Lejeboligfind-minimalist | Railway

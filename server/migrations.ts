@@ -1,10 +1,17 @@
 import { sql } from 'drizzle-orm';
-import { db } from './db.js';
+import { db, pool } from './db';
 
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
     console.log('Database URL configured:', !!process.env.DATABASE_URL);
+    
+    // Test database connection first
+    console.log('Testing database connection...');
+    const client = await pool.connect();
+    await client.query('SELECT 1');
+    client.release();
+    console.log('Database connection successful');
     
     // Create tables if they don't exist
     console.log('Creating users table...');
@@ -139,15 +146,26 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "sessions" USING btree ("expire");
     `);
 
-    // Test database connection
-    console.log('Testing database connection...');
+    // Final test
+    console.log('Testing final database state...');
     const testResult = await db.execute(sql`SELECT 1 as test`);
-    console.log('Database connection test successful:', testResult.length > 0);
+    console.log('Final database test successful:', testResult.length > 0);
 
     console.log('Database migrations completed successfully');
   } catch (error) {
     console.error('Error running migrations:', error);
+    console.error('Database connection string format:', process.env.DATABASE_URL?.substring(0, 20) + '...');
     console.error('This is a critical error - the application cannot start without database access');
+    
+    // Try to provide more helpful error information
+    if (error?.message?.includes('ECONNREFUSED')) {
+      console.error('Connection refused - check if database is running and accessible');
+    } else if (error?.message?.includes('authentication')) {
+      console.error('Authentication failed - check database credentials');
+    } else if (error?.message?.includes('timeout')) {
+      console.error('Connection timeout - check network connectivity');
+    }
+    
     throw error;
   }
 }
