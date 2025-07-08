@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -6,9 +6,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Home, User } from "lucide-react";
+import { Send, Home, MessageCircle } from "lucide-react";
 
 interface Message {
   id: number;
@@ -38,13 +38,13 @@ interface Message {
 }
 
 interface Conversation {
-  id: string; // propertyId-otherUserId
+  id: string;
   propertyId: number;
   otherUserId: number;
   otherUserName: string;
   propertyTitle: string;
   propertyAddress: string;
-  lastMessage?: Message;
+  lastMessage: Message;
   unreadCount: number;
 }
 
@@ -57,7 +57,7 @@ export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Hent samtaler fra ny API endpoint
+  // Fetch conversations
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery<Conversation[]>({
     queryKey: ['conversations', user?.id],
     queryFn: async () => {
@@ -69,26 +69,27 @@ export default function Chat() {
     staleTime: 1000,
   });
 
-  // Hent alle beskeder for valgte samtale
-  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
-    queryKey: ['messages', user?.id, selectedConversation?.id],
+  // Fetch messages for selected conversation
+  const { data: conversationMessages = [], isLoading: messagesLoading } = useQuery<Message[]>({
+    queryKey: ['conversation-messages', selectedConversation?.propertyId, selectedConversation?.otherUserId, user?.id],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/messages');
-      return Array.isArray(response) ? response : [];
+      if (!selectedConversation || !user) return [];
+      const response = await apiRequest('GET', `/api/conversations/${selectedConversation.propertyId}/${selectedConversation.otherUserId}`);
+      return response?.messages || [];
     },
     enabled: isAuthenticated && !!user && !!selectedConversation,
     refetchInterval: 2000,
     staleTime: 1000,
   });
 
-  // Auto-scroll til bunden når nye beskeder kommer
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, selectedConversation]);
+  }, [conversationMessages]);
 
-  // Send besked
+  // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { content: string; receiverId: number; propertyId: number }) => {
       return await apiRequest('POST', '/api/messages', {
@@ -99,8 +100,13 @@ export default function Chat() {
     },
     onSuccess: () => {
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ['messages', user?.id] });
+      // Invalidate both conversations and specific conversation messages
       queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] });
+      if (selectedConversation) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['conversation-messages', selectedConversation.propertyId, selectedConversation.otherUserId, user?.id] 
+        });
+      }
       toast({
         title: "Besked sendt",
         description: "Din besked er sendt",
@@ -125,17 +131,6 @@ export default function Chat() {
     }
   };
 
-  // Find beskeder for valgte samtale
-  const conversationMessages = useMemo(() => {
-    if (!selectedConversation || !user) return [];
-    
-    return messages.filter(msg => 
-      msg.propertyId === selectedConversation.propertyId &&
-      ((msg.senderId === user.id && msg.receiverId === selectedConversation.otherUserId) ||
-       (msg.senderId === selectedConversation.otherUserId && msg.receiverId === user.id))
-    ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }, [messages, selectedConversation, user]);
-
   if (isLoading || conversationsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -156,174 +151,171 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>Chat</span>
-              <span className="text-sm text-muted-foreground">
-                - {user?.name} (ID: {user?.id})
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Samtaler list */}
-              <div className="md:col-span-1">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Samtaler
-                </h3>
-                <div className="space-y-2">
-                  {conversations.length === 0 ? (
-                    <div className="text-sm text-muted-foreground p-4 text-center">
-                      Ingen samtaler endnu
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Conversation Sidebar */}
+      <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            Chat
+          </h1>
+          <p className="text-sm text-gray-500">{user?.name}</p>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto">
+          {conversationsLoading ? (
+            <div className="p-4 text-center text-gray-500">Indlæser samtaler...</div>
+          ) : conversations.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Ingen samtaler endnu</p>
+              <p className="text-xs">Send en besked til en boligejer for at starte</p>
+            </div>
+          ) : (
+            conversations.map(conversation => (
+              <button
+                key={conversation.id}
+                onClick={() => setSelectedConversation(conversation)}
+                className={`w-full p-4 text-left border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                  selectedConversation?.id === conversation.id 
+                    ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' 
+                    : ''
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">
+                      {conversation.otherUserName}
                     </div>
-                  ) : (
-                    conversations.map(conversation => (
-                      <button
-                        key={conversation.id}
-                        onClick={() => setSelectedConversation(conversation)}
-                        className={`w-full p-3 text-left rounded-lg border transition-colors ${
-                          selectedConversation?.id === conversation.id 
-                            ? 'bg-blue-50 dark:bg-blue-950 border-blue-500' 
-                            : 'bg-card hover:bg-muted border-border'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">
-                              {conversation.otherUserName}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <Home className="h-3 w-3" />
-                              <span className="truncate">{conversation.propertyTitle}</span>
-                            </div>
-                            {conversation.lastMessage && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate">
-                                {conversation.lastMessage.content}
-                              </div>
-                            )}
-                          </div>
-                          {conversation.unreadCount > 0 && (
-                            <Badge variant="destructive" className="ml-2 px-1 min-w-5 h-5 text-xs">
-                              {conversation.unreadCount}
-                            </Badge>
-                          )}
-                        </div>
-                      </button>
-                    ))
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                      <Home className="h-3 w-3" />
+                      <span className="truncate">{conversation.propertyTitle}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 truncate">
+                      {conversation.lastMessage.content}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {new Date(conversation.lastMessage.createdAt).toLocaleString('da-DK', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                  {conversation.unreadCount > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-1 min-w-5 h-5 text-xs">
+                      {conversation.unreadCount}
+                    </Badge>
                   )}
                 </div>
-              </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
 
-              {/* Chat område */}
-              <div className="md:col-span-3">
-                {!selectedConversation ? (
-                  <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">
-                    <User className="h-12 w-12 mb-3 opacity-50" />
-                    <p className="text-lg font-medium">Vælg en samtale</p>
-                    <p className="text-sm">Vælg en samtale fra listen for at begynde at chatte</p>
+      {/* Chat Window */}
+      <div className="flex-1 flex flex-col">
+        {!selectedConversation ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+            <MessageCircle className="h-16 w-16 mb-4 opacity-50" />
+            <h2 className="text-xl font-medium mb-2">Vælg en samtale</h2>
+            <p className="text-sm">Vælg en samtale fra listen for at begynde at chatte</p>
+          </div>
+        ) : (
+          <>
+            {/* Chat Header */}
+            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h2 className="font-semibold">{selectedConversation.otherUserName}</h2>
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <Home className="h-3 w-3" />
+                    <span>{selectedConversation.propertyTitle}</span>
                   </div>
-                ) : (
-                  <div className="flex flex-col h-96">
-                    {/* Chat header */}
-                    <div className="flex items-center gap-3 p-4 border-b bg-muted/50 rounded-t-lg">
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{selectedConversation.otherUserName}</h4>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Home className="h-3 w-3" />
-                          <span className="truncate">{selectedConversation.propertyTitle}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Beskeder */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/10">
-                      {conversationMessages.length === 0 ? (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">
-                          <div className="text-center">
-                            <Send className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Ingen beskeder endnu</p>
-                            <p className="text-xs">Start en samtale!</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          {conversationMessages.map((message) => (
-                            <div
-                              key={message.id}
-                              className={`flex ${
-                                message.senderId === user?.id ? 'justify-end' : 'justify-start'
-                              }`}
-                            >
-                              <div
-                                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                                  message.senderId === user?.id
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-background border'
-                                }`}
-                              >
-                                <div className="text-sm font-medium mb-1">
-                                  {message.senderId === user?.id ? 'Du' : message.sender.name}
-                                </div>
-                                <div className="text-sm">{message.content}</div>
-                                <div className={`text-xs mt-1 ${
-                                  message.senderId === user?.id ? 'text-blue-100' : 'text-muted-foreground'
-                                }`}>
-                                  {new Date(message.createdAt).toLocaleTimeString('da-DK', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          <div ref={messagesEndRef} />
-                        </>
-                      )}
-                    </div>
-
-                    {/* Send besked */}
-                    <div className="flex gap-2">
-                      <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Skriv en besked..."
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
-                        disabled={sendMessage.isPending}
-                      />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || sendMessage.isPending}
-                        size="icon"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Debug info */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-                <div className="grid grid-cols-3 gap-2">
-                  <div>Samtaler: {conversations.length}</div>
-                  <div>Beskeder: {messages.length}</div>
-                  <div>Valgt: {selectedConversation ? selectedConversation.otherUserName : 'Ingen'}</div>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
+              {messagesLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-gray-500">Indlæser beskeder...</div>
                 </div>
+              ) : conversationMessages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <Send className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Ingen beskeder endnu</p>
+                    <p className="text-sm">Start samtalen!</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {conversationMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        message.senderId === user?.id ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                          message.senderId === user?.id
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        <div className="text-sm font-medium mb-1">
+                          {message.senderId === user?.id ? 'Du' : message.sender.name}
+                        </div>
+                        <div className="text-sm">{message.content}</div>
+                        <div className={`text-xs mt-1 ${
+                          message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'
+                        }`}>
+                          {new Date(message.createdAt).toLocaleTimeString('da-DK', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Skriv en besked..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  disabled={sendMessage.isPending}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || sendMessage.isPending}
+                  size="icon"
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

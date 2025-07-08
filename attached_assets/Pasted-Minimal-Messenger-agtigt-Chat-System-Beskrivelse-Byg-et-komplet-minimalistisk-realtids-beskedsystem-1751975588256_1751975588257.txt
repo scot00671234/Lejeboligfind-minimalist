@@ -1,0 +1,75 @@
+Minimal Messenger-agtigt Chat System
+Beskrivelse
+Byg et komplet, minimalistisk realtids-beskedsystem til et boligudlejningssite (Lejebolig Find). Det skal ligne Facebook Messenger i enkelhed og layout, og fungere mellem brugere baseret på specifikke boligannoncer.
+
+🏗 Tech Stack (skal bruges)
+Frontend: React 18 + TypeScript + Tailwind CSS + React Query + React Hook Form + Zod + Shadcn/UI
+
+Routing: Wouter
+
+Backend: Node.js (Express.js)
+
+Database: PostgreSQL (via Drizzle ORM), hosted på Neon
+
+Sessions/Auth: Express-session (gemt i PostgreSQL), bcrypt
+
+Bundler: Vite (frontend), esbuild (backend)
+
+✍ Funktioner der skal implementeres
+1. Brugersystem
+Session-baseret login/logout (med adgangskode)
+
+Brugere skal ikke kunne registreres uden adgangskode
+
+Express-session skal gemmes i PostgreSQL med connect-pg-simple
+
+2. Beskedsystem – Database
+sql
+Copy code
+Users(id, email, password)
+Properties(id, userId, ...)
+Messages(id, senderId, receiverId, propertyId, content, createdAt)
+Hver samtale relaterer sig til en property
+
+Samtaler grupperes af (senderId, receiverId, propertyId) (begge veje)
+
+3. Backend API endpoints
+GET /api/messages/conversations
+Returner liste af unikke samtaler for en bruger (med sidste besked)
+
+GET /api/messages/:conversationId
+Returnér alle beskeder for en samtale
+
+POST /api/messages
+Send besked (senderId, receiverId, propertyId, content)
+
+4. Frontend UI
+Minimal messenger-inspireret komponentstruktur:
+
+<ConversationSidebar />
+Viser samtaler (med sidste besked og modtagernavn)
+
+<ChatWindow />
+Viser beskeder i trådform (blå boble for sender, grå for modtager)
+
+<ChatInput />
+Skriv og send ny besked
+
+5. Real-time updates
+Poll hver 2 sek. med React Query
+
+Auto-scroll til nyeste besked
+
+Live opdatering når man sender besked
+
+6. Designkrav
+Brug Tailwind + shadcn/ui
+
+Fokus på minimalistisk UI (Messenger-lignende)
+
+Skal fungere på både desktop og mobil
+
+🧪 Ekstra
+Tilføj testdata: 2 brugere, 1 bolig, og 3 beskeder frem og tilbage
+
+Beskeder skal vises med navn, tidspunkt og korrekt boblefarve
