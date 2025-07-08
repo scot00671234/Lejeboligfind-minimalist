@@ -366,7 +366,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Getting conversations for user:", req.session.userId);
       const conversations = await storage.getUserConversations(req.session.userId);
       console.log("Found conversations:", conversations.length);
-      console.log("Conversations data:", JSON.stringify(conversations, null, 2));
       res.json(conversations);
     } catch (error) {
       console.error("Get conversations error:", error);

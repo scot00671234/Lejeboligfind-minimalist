@@ -62,7 +62,25 @@ export default function Chat() {
     queryKey: ['messages', 'conversations', user?.id],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/messages/conversations');
-      return Array.isArray(response) ? response : [];
+      console.log('Raw conversations API response:', response);
+      console.log('Response type:', typeof response, 'isArray:', Array.isArray(response));
+      
+      if (!Array.isArray(response)) {
+        console.log('Response is not an array, returning empty array');
+        return [];
+      }
+      
+      const validConversations = response.filter((conv, index) => {
+        console.log(`Conversation ${index}:`, conv);
+        const isValid = conv && 
+          conv.propertyTitle && conv.propertyTitle.trim() !== '' && 
+          conv.otherUserName && conv.otherUserName.trim() !== '' &&
+          conv.otherUserId !== user?.id;
+        console.log(`Conversation ${index} valid:`, isValid);
+        return isValid;
+      });
+      console.log('Final filtered conversations:', validConversations);
+      return validConversations;
     },
     enabled: isAuthenticated && !!user,
     refetchInterval: 2000,
@@ -175,6 +193,7 @@ export default function Chat() {
               <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Ingen samtaler endnu</p>
               <p className="text-xs">Send en besked til en boligejer for at starte</p>
+              <p className="text-xs text-gray-400 mt-2">Debug: {JSON.stringify({ isAuth: isAuthenticated, userId: user?.id, convCount: conversations.length })}</p>
             </div>
           ) : (
             conversations.map(conversation => (
