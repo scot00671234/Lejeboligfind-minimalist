@@ -62,34 +62,8 @@ export default function Chat() {
     queryKey: ['messages', 'conversations', user?.id],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/messages/conversations');
-      console.log('Raw conversations API response:', response);
-      console.log('Response type:', typeof response, 'isArray:', Array.isArray(response));
-      
-      if (!Array.isArray(response)) {
-        console.log('Response is not an array, returning empty array');
-        return [];
-      }
-      
-      const validConversations = response.filter((conv, index) => {
-        console.log(`Conversation ${index}:`, conv);
-        console.log(`User ID: ${user?.id}, Other User ID: ${conv?.otherUserId}`);
-        console.log(`Property Title: "${conv?.propertyTitle}"`);
-        console.log(`Other User Name: "${conv?.otherUserName}"`);
-        
-        const hasValidProperty = conv && conv.propertyTitle && conv.propertyTitle.trim() !== '';
-        const hasValidOtherUser = conv && conv.otherUserName && conv.otherUserName.trim() !== '';
-        const isNotSelfConversation = conv && conv.otherUserId !== user?.id;
-        
-        console.log(`Valid property: ${hasValidProperty}`);
-        console.log(`Valid other user: ${hasValidOtherUser}`);
-        console.log(`Not self: ${isNotSelfConversation}`);
-        
-        const isValid = hasValidProperty && hasValidOtherUser && isNotSelfConversation;
-        console.log(`Conversation ${index} valid:`, isValid);
-        return isValid;
-      });
-      console.log('Final filtered conversations:', validConversations);
-      return validConversations;
+      console.log('CONVERSATIONS RESPONSE:', response);
+      return Array.isArray(response) ? response : [];
     },
     enabled: isAuthenticated && !!user,
     refetchInterval: 2000,
@@ -202,7 +176,8 @@ export default function Chat() {
               <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Ingen samtaler endnu</p>
               <p className="text-xs">Send en besked til en boligejer for at starte</p>
-              <p className="text-xs text-gray-400 mt-2">Debug: {JSON.stringify({ isAuth: isAuthenticated, userId: user?.id, convCount: conversations.length })}</p>
+              <p className="text-xs text-gray-400 mt-2">Debug: Auth={isAuthenticated}, User={user?.id}, Count={conversations.length}</p>
+              <p className="text-xs text-gray-400">Raw: {JSON.stringify(conversations)}</p>
             </div>
           ) : (
             conversations.map(conversation => (
