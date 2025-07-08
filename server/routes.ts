@@ -9,6 +9,7 @@ import {
   insertUserSchema,
   insertPropertySchema,
   insertMessageSchema,
+  frontendMessageSchema,
   loginSchema,
   propertySearchSchema,
 } from "@shared/schema";
@@ -373,10 +374,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Create message - Request body:", req.body);
       console.log("Create message - User ID:", req.session.userId);
       
-      const data = insertMessageSchema.parse({
-        ...req.body,
+      // First validate frontend data without senderId
+      const frontendData = frontendMessageSchema.parse(req.body);
+      
+      // Then create full message data with senderId from session
+      const data = {
+        ...frontendData,
         senderId: req.session.userId,
-      });
+      };
       
       console.log("Create message - Parsed data:", data);
       

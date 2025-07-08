@@ -109,6 +109,11 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   read: true,
 });
 
+// Schema for frontend message requests (without senderId which comes from session)
+export const frontendMessageSchema = insertMessageSchema.omit({
+  senderId: true,
+});
+
 export const loginSchema = z.object({
   email: z.string().email("Ugyldig email-adresse"),
   password: z.string().min(6, "Adgangskoden skal være mindst 6 tegn"),

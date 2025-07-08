@@ -39,10 +39,9 @@ export function MessageModal({ isOpen, onClose, propertyId, receiverId }: Messag
 
   const sendMessage = useMutation({
     mutationFn: async (data: MessageFormData) => {
-      const messageData: InsertMessage = {
+      const messageData = {
         content: data.content,
         propertyId,
-        senderId: user!.id,
         receiverId,
       };
       
