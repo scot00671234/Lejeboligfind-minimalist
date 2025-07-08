@@ -70,15 +70,20 @@ export default function Chat() {
   });
 
   // Fetch messages for selected conversation - using exact endpoint as specified
-  const { data: conversationMessages = [], isLoading: messagesLoading } = useQuery<Message[]>({
+  const { data: conversationMessages = [], isLoading: messagesLoading, error: messagesError } = useQuery<Message[]>({
     queryKey: ['messages', selectedConversation?.id, user?.id],
     queryFn: async () => {
-      if (!selectedConversation || !user) return [];
+      if (!selectedConversation || !user) {
+        console.log('No conversation or user selected');
+        return [];
+      }
+      console.log('Fetching messages for conversation:', selectedConversation.id);
       const response = await apiRequest('GET', `/api/messages/${selectedConversation.id}`);
+      console.log('Messages response:', response);
       return Array.isArray(response) ? response : [];
     },
     enabled: isAuthenticated && !!user && !!selectedConversation,
-    refetchInterval: 2000,
+    refetchInterval: 3000,
     staleTime: 1000,
   });
 
@@ -244,12 +249,20 @@ export default function Chat() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-gray-500">Indlæser beskeder...</div>
                 </div>
+              ) : messagesError ? (
+                <div className="flex items-center justify-center h-full text-red-500">
+                  <div className="text-center">
+                    <p>Fejl ved indlæsning af beskeder</p>
+                    <p className="text-sm">{messagesError.message}</p>
+                  </div>
+                </div>
               ) : conversationMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-500">
                   <div className="text-center">
                     <Send className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>Ingen beskeder endnu</p>
                     <p className="text-sm">Start samtalen!</p>
+                    <p className="text-xs mt-2">Conversation ID: {selectedConversation?.id}</p>
                   </div>
                 </div>
               ) : (

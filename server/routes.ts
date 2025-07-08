@@ -374,9 +374,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/:conversationId", requireAuth, async (req: any, res: any) => {
     try {
       const { conversationId } = req.params;
+      console.log('Fetching messages for conversation ID:', conversationId);
+      console.log('Current user ID:', req.session.userId);
+      
       // Parse conversationId format: "propertyId-userId1-userId2" 
       const parts = conversationId.split('-');
       if (parts.length !== 3) {
+        console.error('Invalid conversation ID format:', conversationId);
         return res.status(400).json({ message: 'Invalid conversation ID format' });
       }
 
@@ -386,7 +390,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine the other user ID
       const otherUserId = userId1 === currentUserId ? userId2 : userId1;
       
+      console.log('Fetching messages for property:', propertyId, 'between users:', currentUserId, 'and', otherUserId);
+      
       const messages = await storage.getConversationMessages(propertyId, currentUserId, otherUserId);
+      console.log('Found messages:', messages.length);
+      
       res.json(messages.reverse()); // Return oldest first for proper display order
     } catch (error) {
       console.error('Error fetching conversation messages:', error);
