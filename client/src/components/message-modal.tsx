@@ -46,7 +46,8 @@ export function MessageModal({ isOpen, onClose, propertyId, receiverId }: Messag
         receiverId,
       };
       
-      return await apiRequest("POST", "/api/messages", messageData);
+      const response = await apiRequest("POST", "/api/messages", messageData);
+      return await response.json();
     },
     onSuccess: () => {
       // Invalider alle relevante queries

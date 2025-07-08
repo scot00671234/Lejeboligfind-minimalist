@@ -62,8 +62,9 @@ export default function Chat() {
     queryKey: ['messages', 'conversations', user?.id],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/messages/conversations');
-      console.log('CONVERSATIONS RESPONSE:', response);
-      return Array.isArray(response) ? response : [];
+      const data = await response.json();
+      console.log('CONVERSATIONS DATA:', data);
+      return Array.isArray(data) ? data : [];
     },
     enabled: isAuthenticated && !!user,
     refetchInterval: 2000,
@@ -80,8 +81,9 @@ export default function Chat() {
       }
       console.log('Fetching messages for conversation:', selectedConversation.id);
       const response = await apiRequest('GET', `/api/messages/${selectedConversation.id}`);
-      console.log('Messages response:', response);
-      return Array.isArray(response) ? response : [];
+      const data = await response.json();
+      console.log('Messages data:', data);
+      return Array.isArray(data) ? data : [];
     },
     enabled: isAuthenticated && !!user && !!selectedConversation,
     refetchInterval: 3000,
@@ -98,11 +100,12 @@ export default function Chat() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { content: string; receiverId: number; propertyId: number }) => {
-      return await apiRequest('POST', '/api/messages', {
+      const response = await apiRequest('POST', '/api/messages', {
         content: data.content,
         receiverId: data.receiverId,
         propertyId: data.propertyId,
       });
+      return await response.json();
     },
     onSuccess: () => {
       setNewMessage("");
@@ -177,7 +180,6 @@ export default function Chat() {
               <p>Ingen samtaler endnu</p>
               <p className="text-xs">Send en besked til en boligejer for at starte</p>
               <p className="text-xs text-gray-400 mt-2">Debug: Auth={isAuthenticated}, User={user?.id}, Count={conversations.length}</p>
-              <p className="text-xs text-gray-400">Raw: {JSON.stringify(conversations)}</p>
             </div>
           ) : (
             conversations.map(conversation => (
