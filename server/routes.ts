@@ -370,10 +370,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Message routes
   app.post("/api/messages", requireAuth, async (req: any, res: any) => {
     try {
+      console.log("Create message - Request body:", req.body);
+      console.log("Create message - User ID:", req.session.userId);
+      
       const data = insertMessageSchema.parse({
         ...req.body,
         senderId: req.session.userId,
       });
+      
+      console.log("Create message - Parsed data:", data);
       
       // Prevent users from messaging themselves
       if (data.senderId === data.receiverId) {
@@ -381,9 +386,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const message = await storage.createMessage(data);
+      console.log("Create message - Created message:", message);
       res.json(message);
     } catch (error) {
       console.error("Create message error:", error);
+      if (error.name === "ZodError") {
+        console.error("Validation errors:", error.errors);
+        return res.status(400).json({ 
+          message: "Invalid message data", 
+          errors: error.errors 
+        });
+      }
       res.status(400).json({ message: "Invalid message data" });
     }
   });

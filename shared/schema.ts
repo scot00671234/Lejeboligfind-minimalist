@@ -49,8 +49,8 @@ export const messages = pgTable("messages", {
   senderId: integer("sender_id").references(() => users.id).notNull(),
   receiverId: integer("receiver_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
-  read: boolean("is_read").default(false),
-  createdAt: timestamp("sent_at").defaultNow(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Relations
