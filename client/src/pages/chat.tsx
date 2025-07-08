@@ -57,63 +57,29 @@ export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Hent alle beskeder med forbedret caching per bruger
-  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
-    queryKey: ['messages', user?.id],
+  // Hent samtaler fra ny API endpoint
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery<Conversation[]>({
+    queryKey: ['conversations', user?.id],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/messages');
+      const response = await apiRequest('GET', '/api/conversations');
       return Array.isArray(response) ? response : [];
     },
     enabled: isAuthenticated && !!user,
     refetchInterval: 2000,
-    staleTime: 1000, // Data er fresh i 1 sekund
+    staleTime: 1000,
   });
 
-  // Gruppér beskeder i samtaler per bolig og bruger
-  const conversations: Conversation[] = useMemo(() => {
-    if (!user || !messages.length) return [];
-
-    const conversationMap = new Map<string, Conversation>();
-
-    messages.forEach(message => {
-      const otherUserId = message.senderId === user.id ? message.receiverId : message.senderId;
-      const otherUserName = message.senderId === user.id ? message.receiver.name : message.sender.name;
-      
-      // Konsistent nøgle uanset hvem der er sender/modtager
-      const conversationKey = `${message.propertyId}-${Math.min(user.id, otherUserId)}-${Math.max(user.id, otherUserId)}`;
-
-      if (!conversationMap.has(conversationKey)) {
-        conversationMap.set(conversationKey, {
-          id: conversationKey,
-          propertyId: message.propertyId,
-          otherUserId,
-          otherUserName,
-          propertyTitle: message.property.title,
-          propertyAddress: message.property.address,
-          unreadCount: 0,
-        });
-      }
-
-      const conversation = conversationMap.get(conversationKey)!;
-      
-      // Opdater sidste besked
-      if (!conversation.lastMessage || new Date(message.createdAt) > new Date(conversation.lastMessage.createdAt)) {
-        conversation.lastMessage = message;
-      }
-
-      // Tæl ulæste beskeder (kun beskeder modtaget af nuværende bruger)
-      if (message.receiverId === user.id && !message.read) {
-        conversation.unreadCount++;
-      }
-    });
-
-    return Array.from(conversationMap.values())
-      .sort((a, b) => {
-        const aTime = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
-        const bTime = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
-        return bTime - aTime; // Nyeste samtaler først
-      });
-  }, [messages, user]);
+  // Hent alle beskeder for valgte samtale
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
+    queryKey: ['messages', user?.id, selectedConversation?.id],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/messages');
+      return Array.isArray(response) ? response : [];
+    },
+    enabled: isAuthenticated && !!user && !!selectedConversation,
+    refetchInterval: 2000,
+    staleTime: 1000,
+  });
 
   // Auto-scroll til bunden når nye beskeder kommer
   useEffect(() => {
@@ -134,6 +100,7 @@ export default function Chat() {
     onSuccess: () => {
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ['messages', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] });
       toast({
         title: "Besked sendt",
         description: "Din besked er sendt",
@@ -169,7 +136,7 @@ export default function Chat() {
     ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [messages, selectedConversation, user]);
 
-  if (isLoading) {
+  if (isLoading || conversationsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-lg">Indlæser...</div>

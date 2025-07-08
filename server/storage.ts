@@ -36,6 +36,7 @@ export interface IStorage {
   getPropertyMessages(propertyId: number, userId: number): Promise<Message[]>;
   getAllUserMessages(userId: number): Promise<any[]>;
   getConversationMessages(propertyId: number, userId: number, otherUserId: number, page?: number, limit?: number): Promise<Message[]>;
+  getUserConversations(userId: number): Promise<any[]>;
   markMessageAsRead(messageId: number, userId: number): Promise<void>;
 }
 
@@ -259,6 +260,90 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(messages.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  async getUserConversations(userId: number): Promise<any[]> {
+    const senderUsers = alias(users, "senderUsers");
+    const receiverUsers = alias(users, "receiverUsers");
+    
+    // Get all messages for this user with all needed data
+    const userMessages = await db
+      .select({
+        id: messages.id,
+        content: messages.content,
+        propertyId: messages.propertyId,
+        senderId: messages.senderId,
+        receiverId: messages.receiverId,
+        createdAt: messages.createdAt,
+        read: messages.read,
+        property: {
+          id: properties.id,
+          title: properties.title,
+          address: properties.address,
+          price: properties.price,
+          type: properties.type,
+        },
+        sender: {
+          id: senderUsers.id,
+          name: senderUsers.name,
+          email: senderUsers.email,
+        },
+        receiver: {
+          id: receiverUsers.id,
+          name: receiverUsers.name,
+          email: receiverUsers.email,
+        },
+      })
+      .from(messages)
+      .innerJoin(properties, eq(messages.propertyId, properties.id))
+      .innerJoin(senderUsers, eq(messages.senderId, senderUsers.id))
+      .innerJoin(receiverUsers, eq(messages.receiverId, receiverUsers.id))
+      .where(
+        or(
+          eq(messages.senderId, userId),
+          eq(messages.receiverId, userId)
+        )
+      )
+      .orderBy(desc(messages.createdAt));
+
+    // Group messages into conversations
+    const conversationMap = new Map<string, any>();
+    
+    userMessages.forEach(message => {
+      const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
+      const otherUserName = message.senderId === userId ? message.receiver.name : message.sender.name;
+      
+      // Create consistent conversation key
+      const conversationKey = `${message.propertyId}-${Math.min(userId, otherUserId)}-${Math.max(userId, otherUserId)}`;
+      
+      if (!conversationMap.has(conversationKey)) {
+        conversationMap.set(conversationKey, {
+          id: conversationKey,
+          propertyId: message.propertyId,
+          otherUserId,
+          otherUserName,
+          propertyTitle: message.property.title,
+          propertyAddress: message.property.address,
+          lastMessage: message,
+          unreadCount: 0,
+        });
+      }
+      
+      const conversation = conversationMap.get(conversationKey)!;
+      
+      // Update last message if this one is newer
+      if (new Date(message.createdAt) > new Date(conversation.lastMessage.createdAt)) {
+        conversation.lastMessage = message;
+      }
+      
+      // Count unread messages for current user
+      if (message.receiverId === userId && !message.read) {
+        conversation.unreadCount++;
+      }
+    });
+    
+    return Array.from(conversationMap.values())
+      .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
   }
 
   async markMessageAsRead(messageId: number, userId: number): Promise<void> {

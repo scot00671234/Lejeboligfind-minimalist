@@ -77,6 +77,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = insertUserSchema.parse(req.body);
       
+      // Additional server-side validation for security
+      if (!data.password || data.password.length < 6) {
+        return res.status(400).json({ message: "Adgangskoden skal være mindst 6 tegn" });
+      }
+      
+      if (!data.name || data.name.trim().length === 0) {
+        return res.status(400).json({ message: "Navn er påkrævet" });
+      }
+      
+      if (!data.email || !data.email.includes('@')) {
+        return res.status(400).json({ message: "Ugyldig email-adresse" });
+      }
+      
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(data.email);
       if (existingUser) {
@@ -98,6 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ user: { id: user.id, email: user.email, name: user.name } });
     } catch (error) {
       console.error("Registration error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
       res.status(400).json({ message: "Invalid registration data" });
     }
   });
@@ -341,6 +357,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get all messages error:", error);
       res.status(500).json({ message: "Failed to get messages" });
+    }
+  });
+
+  // New conversations endpoint
+  app.get("/api/conversations", requireAuth, async (req: any, res: any) => {
+    try {
+      const conversations = await storage.getUserConversations(req.session.userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      res.status(500).json({ message: "Failed to get conversations" });
     }
   });
 

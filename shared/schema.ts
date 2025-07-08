@@ -90,6 +90,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  password: z.string().min(6, "Adgangskoden skal være mindst 6 tegn"),
+  name: z.string().min(1, "Navn er påkrævet"),
+  email: z.string().email("Ugyldig email-adresse"),
 });
 
 export const insertPropertySchema = createInsertSchema(properties).omit({
@@ -106,8 +110,8 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email("Ugyldig email-adresse"),
+  password: z.string().min(6, "Adgangskoden skal være mindst 6 tegn"),
 });
 
 export const propertySearchSchema = z.object({
