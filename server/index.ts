@@ -39,10 +39,18 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Run database migrations first
-  await runMigrations();
-  
-  const server = await registerRoutes(app);
+  try {
+    console.log('Starting application...');
+    console.log('Environment:', process.env.NODE_ENV || 'development');
+    console.log('Database URL configured:', !!process.env.DATABASE_URL);
+    
+    // Run database migrations first
+    console.log('Initializing database...');
+    await runMigrations();
+    console.log('Database initialization completed successfully');
+    
+    console.log('Setting up API routes...');
+    const server = await registerRoutes(app);
   
   // Setup WebSocket
   const io = setupWebSocket(server);
@@ -75,5 +83,15 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     log(`WebSocket server ready`, "websocket");
+    console.log('🚀 Application started successfully and ready to handle requests');
+    console.log('📊 Database tables created and ready');
+    console.log('💬 Messaging system active with WebSocket support');
+    console.log(`🌐 Server accessible at http://0.0.0.0:${port}`);
   });
+  } catch (error) {
+    console.error('❌ CRITICAL ERROR: Failed to start application');
+    console.error('Error details:', error);
+    console.error('This is likely a database connection issue. Check your DATABASE_URL environment variable.');
+    process.exit(1);
+  }
 })();

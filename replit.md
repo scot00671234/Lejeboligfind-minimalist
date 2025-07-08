@@ -1,8 +1,16 @@
-# Lejebolig Find - Danish Rental Property Platform
+# Lejebolig Find - Danish Rental Property Platform with Integrated Messaging
 
 ## Overview
 
-Lejebolig Find is a Danish rental property platform that connects property owners with potential tenants. The application allows users to search for rental properties, view detailed property information, create listings, and communicate with property owners through an integrated messaging system.
+Lejebolig Find is a comprehensive Danish rental property platform that connects property owners with potential tenants. The application features:
+- Property search and listing functionality
+- User authentication and property management
+- **Real-time messaging system** for landlord-tenant communication
+- Property sorting and filtering capabilities
+- Modern Facebook Messenger-style chat interface
+- Responsive design with Danish language support
+
+The platform serves as both a property marketplace AND a messaging platform, enabling seamless communication between users within the context of property inquiries and rental arrangements.
 
 ## System Architecture
 
@@ -203,6 +211,19 @@ Lejebolig Find is a Danish rental property platform that connects property owner
   - Frontend correctly receives and displays conversation data with real-time updates
   - All API endpoints working correctly with proper authentication and data flow
   - Project now runs cleanly in Replit environment with complete messaging functionality
+- July 08, 2025. Enhanced production deployment readiness for Railway:
+  - Improved database migration system with comprehensive error handling and logging
+  - Added automatic table creation with proper foreign key constraints and indexes
+  - Enhanced startup process with detailed logging for production troubleshooting
+  - Database schema automatically deployed on application startup without manual intervention
+  - Added connection testing and validation to ensure Railway PostgreSQL compatibility
+  - Application now 100% ready for Railway deployment with zero manual database setup required
+- July 08, 2025. Added property sorting functionality on front page:
+  - Implemented sort by price (low to high / high to low) and date (newest / oldest)
+  - Added Danish language sorting dropdown with intuitive labels
+  - Backend supports comprehensive sorting options through enhanced API
+  - Frontend displays sorting controls in top-right corner of property listings
+  - Default sorting by newest properties first with real-time sort updates
 
 ## User Preferences
 

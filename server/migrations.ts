@@ -4,8 +4,10 @@ import { db } from './db.js';
 export async function runMigrations() {
   try {
     console.log('Running database migrations...');
+    console.log('Database URL configured:', !!process.env.DATABASE_URL);
     
     // Create tables if they don't exist
+    console.log('Creating users table...');
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "users" (
         "id" serial PRIMARY KEY NOT NULL,
@@ -18,6 +20,7 @@ export async function runMigrations() {
       );
     `);
 
+    console.log('Creating properties table...');
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "properties" (
         "id" serial PRIMARY KEY NOT NULL,
@@ -70,6 +73,7 @@ export async function runMigrations() {
       END $$;
     `);
 
+    console.log('Creating messages table...');
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "messages" (
         "id" serial PRIMARY KEY NOT NULL,
@@ -77,11 +81,12 @@ export async function runMigrations() {
         "sender_id" integer NOT NULL,
         "receiver_id" integer NOT NULL,
         "content" text NOT NULL,
-        "is_read" boolean DEFAULT false NOT NULL,
-        "sent_at" timestamp DEFAULT now() NOT NULL
+        "read" boolean DEFAULT false NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
       );
     `);
 
+    console.log('Creating sessions table...');
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "sessions" (
         "sid" varchar(128) PRIMARY KEY NOT NULL,
@@ -91,6 +96,7 @@ export async function runMigrations() {
     `);
 
     // Add foreign key constraints if they don't exist
+    console.log('Adding foreign key constraints...');
     await db.execute(sql`
       DO $$ BEGIN
         ALTER TABLE "properties" ADD CONSTRAINT "properties_user_id_users_id_fk" 
@@ -128,13 +134,20 @@ export async function runMigrations() {
     `);
 
     // Create index if it doesn't exist
+    console.log('Creating indexes...');
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "sessions" USING btree ("expire");
     `);
 
+    // Test database connection
+    console.log('Testing database connection...');
+    const testResult = await db.execute(sql`SELECT 1 as test`);
+    console.log('Database connection test successful:', testResult.length > 0);
+
     console.log('Database migrations completed successfully');
   } catch (error) {
     console.error('Error running migrations:', error);
+    console.error('This is a critical error - the application cannot start without database access');
     throw error;
   }
 }
