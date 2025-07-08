@@ -25,6 +25,8 @@ function getSession() {
     tableName: "sessions",
   });
   
+  const isProduction = process.env.NODE_ENV === "production";
+  
   return session({
     secret: process.env.SESSION_SECRET || "your-secret-key-here",
     store: sessionStore,
@@ -33,10 +35,11 @@ function getSession() {
     name: "connect.sid",
     cookie: {
       httpOnly: true,
-      secure: false, // Set to false for development
+      secure: isProduction, // True for production (HTTPS), false for development
       maxAge: sessionTtl,
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax", // 'none' for cross-origin in production
       path: "/", // Explicitly set path
+      domain: undefined, // Let browser determine domain automatically
     },
   });
 }
@@ -147,6 +150,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Login - Setting session userId:", user.id);
       console.log("Login - Session before save:", req.session);
+      console.log("Login - Request headers:", req.headers);
+      console.log("Login - Request host:", req.get('host'));
       
       // Save session and send response
       req.session.save((err: any) => {
@@ -157,6 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log("Login - Session after save:", req.session);
         console.log("Login - Session ID:", req.sessionID);
+        console.log("Login - Response headers about to be sent:", res.getHeaders());
         
         res.json({ user: { id: user.id, email: user.email, name: user.name } });
       });
