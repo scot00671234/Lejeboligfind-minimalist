@@ -125,7 +125,30 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    const results = await query.orderBy(desc(properties.createdAt));
+    // Add sorting based on search parameters
+    let sortedQuery = query;
+    if (search?.sortBy) {
+      switch (search.sortBy) {
+        case 'price_asc':
+          sortedQuery = query.orderBy(properties.price);
+          break;
+        case 'price_desc':
+          sortedQuery = query.orderBy(desc(properties.price));
+          break;
+        case 'date_asc':
+          sortedQuery = query.orderBy(properties.createdAt);
+          break;
+        case 'date_desc':
+          sortedQuery = query.orderBy(desc(properties.createdAt));
+          break;
+        default:
+          sortedQuery = query.orderBy(desc(properties.createdAt));
+      }
+    } else {
+      sortedQuery = query.orderBy(desc(properties.createdAt));
+    }
+    
+    const results = await sortedQuery;
     
     return results
       .filter(result => result.users)

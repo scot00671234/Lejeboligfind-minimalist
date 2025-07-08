@@ -26,6 +26,8 @@ export default function Home() {
         params.append("minRooms", search.minRooms.toString());
       if (search.maxRooms)
         params.append("maxRooms", search.maxRooms.toString());
+      if (search.sortBy)
+        params.append("sortBy", search.sortBy);
 
       const response = await fetch(`/api/properties?${params}`);
       if (!response.ok) throw new Error("Failed to fetch properties");
@@ -64,6 +66,19 @@ export default function Home() {
             <h2 className="text-2xl font-light text-foreground">
               Aktuelle boliger
             </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Sortér efter:</span>
+              <select 
+                className="px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                value={search.sortBy || 'date_desc'}
+                onChange={(e) => handleSearch({ ...search, sortBy: e.target.value as any })}
+              >
+                <option value="date_desc">Nyeste først</option>
+                <option value="date_asc">Ældste først</option>
+                <option value="price_asc">Pris: Lav til høj</option>
+                <option value="price_desc">Pris: Høj til lav</option>
+              </select>
+            </div>
           </div>
 
           {isLoading ? (

@@ -174,6 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxPrice: req.query.maxPrice ? parseInt(req.query.maxPrice as string) : undefined,
         minRooms: req.query.minRooms ? parseInt(req.query.minRooms as string) : undefined,
         maxRooms: req.query.maxRooms ? parseInt(req.query.maxRooms as string) : undefined,
+        sortBy: req.query.sortBy as any,
       });
       
       const properties = await storage.getProperties(search);

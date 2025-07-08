@@ -121,6 +121,7 @@ export const propertySearchSchema = z.object({
   maxPrice: z.number().optional(),
   minRooms: z.number().optional(),
   maxRooms: z.number().optional(),
+  sortBy: z.enum(['price_asc', 'price_desc', 'date_asc', 'date_desc']).optional(),
 });
 
 // Types
