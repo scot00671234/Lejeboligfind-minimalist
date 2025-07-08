@@ -176,6 +176,16 @@ Lejebolig Find is a Danish rental property platform that connects property owner
   - Improved message auto-refresh to 2-second intervals for immediate message display
   - Fixed property ownership caching issues with user-specific query keys
   - Project now runs cleanly in standard Replit environment with proper security practices
+- July 08, 2025. Comprehensive messaging system upgrade:
+  - Rebuilt chat interface with modern Messenger-style design and proper conversation grouping per property
+  - Implemented read/unread status tracking with visual badges for unread message counts
+  - Added automatic message polling every 2 seconds with optimized cache invalidation strategy
+  - Enhanced conversation sidebar showing property details, last message previews, and participant names
+  - Added auto-scroll to bottom when new messages arrive with smooth scrolling behavior
+  - Improved message bubbles with sender identification, timestamps, and color-coded styling (blue for sender, gray for receiver)
+  - Fixed conversation threading to prevent messages from splitting into separate threads
+  - Enhanced message modal with proper cache invalidation across all message-related queries
+  - Added comprehensive error handling and loading states throughout messaging system
 
 ## User Preferences
 

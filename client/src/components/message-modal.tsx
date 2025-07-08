@@ -46,11 +46,14 @@ export function MessageModal({ isOpen, onClose, propertyId, receiverId }: Messag
         receiverId,
       };
       
-      const response = await apiRequest("POST", "/api/messages", messageData);
-      return response.json();
+      return await apiRequest("POST", "/api/messages", messageData);
     },
     onSuccess: () => {
+      // Invalider alle relevante queries
       queryClient.invalidateQueries({ queryKey: ["/api/properties", propertyId, "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["messages", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      
       toast({
         title: "Besked sendt",
         description: "Din besked er blevet sendt til udlejeren",
